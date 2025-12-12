@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zesty Fruity</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        canvas {
+            display: block;
+            background: #111;
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="480" height="640"></canvas>
+    <div class="instructions">
+        Use Arrow Keys/WASD to move | Space to shoot | 1/2 to select player
+    </div>
+
+    <script>
+        // ==================== GAME CONSTANTS ====================
+        const CANVAS_WIDTH = 480;
+        const CANVAS_HEIGHT = 640;
+        const PLAYER_SPEED = 5;
+        const PLAYER_SIZE = 48;
+        const HITBOX_RADIUS = 2;
+        const INITIAL_LIVES = 3;
+        const INITIAL_CONTINUES = 2;
+        const SHOOT_COOLDOWN = 15;
+        const ENEMY_SPAWN_RATE = 100;
+        const ENEMY_SIZE = 64;
+
+        // ==================== GAME STATE ====================
+        const GameState = {
+            LOADING: 'loading',
+            TITLE: 'title',
+            PLAYING: 'playing',
+            GAMEOVER: 'gameover'
+        };
+
+        // ==================== IMAGE MANAGEMENT ====================
+        class ImageLoader {
+            constructor() {
+                this.images = {};
+                this.loadedCount = 0;
+                this.totalImages = 0;
+            }
+
+            load(imageList) {
+                this.totalImages = imageList.length;
+                
+                imageList.forEach(name => {
+                    const img = new Image();
+                    img.src = `img/${name}`;
+                    
+                    img.onload = () => this.onImageLoad(name, img);
+                    img.onerror = () => this.onImageError(name);
+                    
+                    this.images[name] = img;
+                });
+            }
+
+            onImageLoad(name, img) {
+                this.images[name] = img;
+                this.loadedCount++;
+                this.checkAllLoaded();
+            }
+
+            onImageError(name) {
+                console.warn(`Failed to load: ${name}, using fallback`);
+                this.images[name] = null;
+                this.loadedCount++;
+                this.checkAllLoaded();
+            }
+
+            checkAllLoaded() {
+                if (this.loadedCount === this.totalImages) {
+                    gameState = GameState.TITLE;
+                }
+            }
+
+            get(name) {
+                return this.images[name];
+            }
+        }
+
+        // ==================== BUTTON SYSTEM ====================
+        class Button {
+            constructor(x, y, width = 100, height = 40) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+            }
+
+            isHovered(mouseX, mouseY) {
+                return mouseX >= this.x && 
+                       mouseX <= this.x + this.width && 
+                       mouseY >= this.y && 
+                       mouseY <= this.y + this.height;
+            }
+
+            draw(ctx, image, text, isHovered) {
+                if (image) {
+                    ctx.drawImage(image, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = isHovered ? '#ff00ff' : 'magenta';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(text, this.x + this.width / 2, this.y + 25);
+                }
+                
+                ctx.strokeStyle = isHovered ? 'yellow' : 'white';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
+        // ==================== GAME OBJECTS ====================
+        class Player {
+            constructor() {
+                this.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+                this.y = CANVAS_HEIGHT - 100;
+                this.width = PLAYER_SIZE;
+                this.height = PLAYER_SIZE;
+                this.speed = PLAYER_SPEED;
+                this.hitbox = HITBOX_RADIUS;
+            }
+
+            update(keys) {
+                if (keys['ArrowLeft'] || keys['a']) {
+                    this.x = Math.max(0, this.x - this.speed);
+                }
+                if (keys['ArrowRight'] || keys['d']) {
+                    this.x = Math.min(CANVAS_WIDTH - this.width, this.x + this.speed);
+                }
+                if (keys['ArrowUp'] || keys['w']) {
+                    this.y = Math.max(0, this.y - this.speed);
+                }
+                if (keys['ArrowDown'] || keys['s']) {
+                    this.y = Math.min(CANVAS_HEIGHT - this.height, this.y + this.speed);
+                }
+            }
+
+            draw(ctx, image) {
+                if (image) {
+                    ctx.drawImage(image, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = 'cyan';
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+
+                // Draw hitbox for debugging
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.arc(
+                    this.x + this.width / 2,
+                    this.y + this.height / 2,
+                    this.hitbox,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let gameState = GameState.LOADING;
+        let selectedPlayer = 'player1.png';
+        let score = 0;
+        let lives = INITIAL_LIVES;
+        let continues = INITIAL_CONTINUES;
+        let highscore = parseInt(localStorage.getItem('zestyHighscore')) || 0;
+
+        const imageLoader = new ImageLoader();
+        const imageNames = [
+            'player1.png', 'player2.png', 'playerBullet.png', 'playerBullet2.png',
+            'enemy.png', 'enemyBullet.png',
+            'title.png', 'startBtn.png', 'continueBtn.png',
+            'retry.png', 'giveUp.png', 'gameOver.png', 'bg.png'
+        ];
+        imageLoader.load(imageNames);
+
+        const player = new Player();
+        const bullets = [];
+        const enemies = [];
+        const enemyBullets = [];
+        const keys = {};
+        let shootCooldown = 0;
+        let mousePos = { x: -100, y: -100 };
+        let bgOffset = 0;
+
+        // Create buttons
+        const buttons = {
+            start: new Button(168, 320),
+            continue: new Button(168, 384),
+            retry: new Button(120, 448),
+            giveUp: new Button(264, 448)
+        };
+
+        // ==================== INPUT HANDLING ====================
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+
+            if (gameState === GameState.TITLE) {
+                if (e.key === '1') selectedPlayer = 'player1.png';
+                if (e.key === '2') selectedPlayer = 'player2.png';
+                if (e.key === 'Enter') startGame();
+            }
+
+            if (gameState === GameState.GAMEOVER && e.key === 'Enter') {
+                continues > 0 ? retryWithContinue() : retryFromStart();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            if (gameState === GameState.TITLE) {
+                if (buttons.start.isHovered(x, y)) startGame();
+                if (buttons.continue.isHovered(x, y) && continues > 0) startWithContinue();
+            }
+
+            if (gameState === GameState.GAMEOVER) {
+                if (buttons.retry.isHovered(x, y)) {
+                    continues > 0 ? retryWithContinue() : retryFromStart();
+                }
+                if (buttons.giveUp.isHovered(x, y)) {
+                    gameState = GameState.TITLE;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mousePos.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            mousePos.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        });
+
+        // ==================== GAME FUNCTIONS ====================
+        function startGame() {
+            gameState = GameState.PLAYING;
+            score = 0;
+            lives = INITIAL_LIVES;
+            resetGameObjects();
+        }
+
+        function startWithContinue() {
+            if (continues > 0) {
+                continues--;
+                startGame();
+            }
+        }
+
+        function retryWithContinue() {
+            if (continues > 0) {
+                continues--;
+                gameState = GameState.PLAYING;
+                lives = INITIAL_LIVES;
+                resetGameObjects();
+            }
+        }
+
+        function retryFromStart() {
+            gameState = GameState.PLAYING;
+            score = 0;
+            lives = INITIAL_LIVES;
+            continues = INITIAL_CONTINUES;
+            resetGameObjects();
+        }
+
+        function resetGameObjects() {
+            player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+            player.y = CANVAS_HEIGHT - 100;
+            bullets.length = 0;
+            enemies.length = 0;
+            enemyBullets.length = 0;
+            shootCooldown = 0;
+        }
+
+        function gameOver() {
+            gameState = GameState.GAMEOVER;
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('zestyHighscore', highscore);
+            }
+        }
+
+        // ==================== SHOOTING ====================
+        function shoot() {
+            if (shootCooldown > 0) return;
+
+            const centerX = player.x + player.width / 2;
+
+            if (selectedPlayer === 'player1.png') {
+                // Triple shot
+                bullets.push({ x: player.x, y: player.y, dx: -1, dy: -7, w: 6, h: 12 });
+                bullets.push({ x: centerX - 3, y: player.y, dx: 0, dy: -7, w: 6, h: 12 });
+                bullets.push({ x: player.x + player.width, y: player.y, dx: 1, dy: -7, w: 6, h: 12 });
+            } else {
+                // Single powerful shot
+                bullets.push({ 
+                    x: centerX - 4, 
+                    y: player.y, 
+                    dx: 0, 
+                    dy: -10, 
+                    w: 8, 
+                    h: 24, 
+                    color: 'pink' 
+                });
+            }
+
+            shootCooldown = SHOOT_COOLDOWN;
+        }
+
+        // ==================== ENEMY SPAWNING ====================
+        let enemyTimer = 0;
+
+        function spawnEnemy() {
+            enemyTimer++;
+            if (enemyTimer >= ENEMY_SPAWN_RATE) {
+                enemies.push({
+                    x: Math.random() * (CANVAS_WIDTH - ENEMY_SIZE),
+                    y: -ENEMY_SIZE,
+                    w: ENEMY_SIZE,
+                    h: ENEMY_SIZE,
+                    speed: 1.5,
+                    timer: 0,
+                    vx: (Math.random() * 2 - 1) * 2
+                });
+                enemyTimer = 0;
+            }
+        }
+
+        // ==================== UPDATE LOGIC ====================
+        function update() {
+            if (gameState !== GameState.PLAYING) return;
+
+            // Update player
+            player.update(keys);
+
+            // Handle shooting
+            if (keys[' '] || keys['Space']) {
+                shoot();
+            }
+            if (shootCooldown > 0) shootCooldown--;
+
+            // Spawn enemies
+            spawnEnemy();
+
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+
+                if (bullet.y + bullet.h < 0 || bullet.x < 0 || bullet.x > CANVAS_WIDTH) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // Update enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.y += enemy.speed;
+                enemy.x += enemy.vx;
+                enemy.timer++;
+
+                // Enemy shooting
+                if (enemy.timer % 50 === 0) {
+                    for (let b = 0; b < 8; b++) {
+                        const angle = (Math.PI * 2 / 8) * b;
+                        enemyBullets.push({
+                            x: enemy.x + enemy.w / 2,
+                            y: enemy.y + enemy.h / 2,
+                            dx: Math.cos(angle) * 2.5,
+                            dy: Math.sin(angle) * 2.5,
+                            w: 6,
+                            h: 6
+                        });
+                    }
+                }
+
+                // Check bullet collision
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
+                    if (bullet.x < enemy.x + enemy.w &&
+                        bullet.x + bullet.w > enemy.x &&
+                        bullet.y < enemy.y + enemy.h &&
+                        bullet.y + bullet.h > enemy.y) {
+                        
+                        enemies.splice(i, 1);
+                        bullets.splice(j, 1);
+                        score++;
+                        if (score > highscore) highscore = score;
+                        break;
+                    }
+                }
+
+                // Check player collision
+                const playerCenterX = player.x + player.width / 2;
+                const playerCenterY = player.y + player.height / 2;
+                const enemyCenterX = enemy.x + enemy.w / 2;
+                const enemyCenterY = enemy.y + enemy.h / 2;
+
+                const distance = Math.sqrt(
+                    Math.pow(playerCenterX - enemyCenterX, 2) +
+                    Math.pow(playerCenterY - enemyCenterY, 2)
+                );
+
+                if (distance < player.hitbox + enemy.w / 2) {
+                    lives--;
+                    enemies.splice(i, 1);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    } else {
+                        player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+                        player.y = CANVAS_HEIGHT - 100;
+                    }
+                    break;
+                }
+
+                // Remove off-screen enemies
+                if (enemy.y > CANVAS_HEIGHT) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // Update enemy bullets
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const bullet = enemyBullets[i];
+                bullet.x += bullet.dx;
+                bullet.y += bullet.dy;
+
+                const playerCenterX = player.x + player.width / 2;
+                const playerCenterY = player.y + player.height / 2;
+                const bulletCenterX = bullet.x + bullet.w / 2;
+                const bulletCenterY = bullet.y + bullet.h / 2;
+
+                const distance = Math.sqrt(
+                    Math.pow(playerCenterX - bulletCenterX, 2) +
+                    Math.pow(playerCenterY - bulletCenterY, 2)
+                );
+
+                if (distance < player.hitbox) {
+                    lives--;
+                    enemyBullets.splice(i, 1);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    } else {
+                        player.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+                        player.y = CANVAS_HEIGHT - 100;
+                    }
+                    break;
+                }
+
+                // Remove off-screen bullets
+                if (bullet.y > CANVAS_HEIGHT || bullet.x < 0 || bullet.x > CANVAS_WIDTH) {
+                    enemyBullets.splice(i, 1);
+                }
+            }
+        }
+
+        // ==================== RENDERING ====================
+        function drawBackground() {
+            const bgImage = imageLoader.get('bg.png');
+            
+            if (bgImage) {
+                bgOffset += 1;
+                if (bgOffset >= CANVAS_HEIGHT) bgOffset = 0;
+                
+                ctx.drawImage(bgImage, 0, bgOffset - CANVAS_HEIGHT, CANVAS_WIDTH, CANVAS_HEIGHT);
+                ctx.drawImage(bgImage, 0, bgOffset, CANVAS_WIDTH, CANVAS_HEIGHT);
+            } else {
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            }
+        }
+
+        function drawHUD() {
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'left';
+            
+            const hudInfo = [
+                `Score: ${score}`,
+                `Lives: ${lives}`,
+                `Highscore: ${highscore}`,
+                `Continues: ${continues}`,
+                `Player: ${selectedPlayer === 'player1.png' ? '1' : '2'}`
+            ];
+            
+            hudInfo.forEach((text, index) => {
+                ctx.fillText(text, 10, 20 + (index * 20));
+            });
+            
+            // Beta indicator
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.textAlign = 'right';
+            ctx.fillText('BETA', CANVAS_WIDTH - 10, 20);
+        }
+
+        function drawGameObjects() {
+            // Draw player
+            player.draw(ctx, imageLoader.get(selectedPlayer));
+
+            // Draw bullets
+            bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color || 'yellow';
+                ctx.fillRect(bullet.x, bullet.y, bullet.w, bullet.h);
+            });
+
+            // Draw enemies
+            enemies.forEach(enemy => {
+                const enemyImage = imageLoader.get('enemy.png');
+                
+                if (enemyImage) {
+                    ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.w, enemy.h);
+                } else {
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+                }
+                
+                // Debug outline
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(enemy.x, enemy.y, enemy.w, enemy.h);
+            });
+
+            // Draw enemy bullets
+            enemyBullets.forEach(bullet => {
+                ctx.fillStyle = 'magenta';
+                ctx.fillRect(bullet.x, bullet.y, bullet.w, bullet.h);
+            });
+        }
+
+        function drawTitleScreen() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            const titleImage = imageLoader.get('title.png');
+            if (titleImage) {
+                ctx.drawImage(titleImage, 48, 64, 384, 192);
+            } else {
+                ctx.fillStyle = 'magenta';
+                ctx.font = '40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Zesty Fruity', CANVAS_WIDTH / 2, 160);
+            }
+
+            // Draw buttons
+            buttons.start.draw(
+                ctx, 
+                imageLoader.get('startBtn.png'), 
+                'Start', 
+                buttons.start.isHovered(mousePos.x, mousePos.y)
+            );
+            
+            buttons.continue.draw(
+                ctx, 
+                imageLoader.get('continueBtn.png'), 
+                continues > 0 ? 'Continue' : 'No Continues', 
+                buttons.continue.isHovered(mousePos.x, mousePos.y)
+            );
+
+            // Instructions
+            ctx.fillStyle = 'white';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            
+            const instructions = [
+                'Press 1 or 2 to select player',
+                'Player 1: Triple Shot | Player 2: Laser',
+                'Press Enter to start'
+            ];
+            
+            instructions.forEach((text, index) => {
+                ctx.fillText(text, CANVAS_WIDTH / 2, 512 + (index * 32));
+            });
+        }
+
+        function drawGameOverScreen() {
+            const gameOverImage = imageLoader.get('gameOver.png');
+            
+            if (gameOverImage) {
+                ctx.drawImage(gameOverImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            } else {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                ctx.fillStyle = 'red';
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, 280);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${score}`, CANVAS_WIDTH / 2, 330);
+                ctx.fillText(`Highscore: ${highscore}`, CANVAS_WIDTH / 2, 360);
+            }
+
+            // Draw buttons
+            buttons.retry.draw(
+                ctx, 
+                imageLoader.get('retry.png'), 
+                'Retry', 
+                buttons.retry.isHovered(mousePos.x, mousePos.y)
+            );
+            
+            buttons.giveUp.draw(
+                ctx, 
+                imageLoader.get('giveUp.png'), 
+                'Give Up', 
+                buttons.giveUp.isHovered(mousePos.x, mousePos.y)
+            );
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            if (gameState === GameState.LOADING) {
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Loading...', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+                return;
+            }
+
+            drawBackground();
+
+            switch (gameState) {
+                case GameState.TITLE:
+                    drawTitleScreen();
+                    break;
+                    
+                case GameState.PLAYING:
+                    drawGameObjects();
+                    drawHUD();
+                    break;
+                    
+                case GameState.GAMEOVER:
+                    drawGameObjects();
+                    drawHUD();
+                    drawGameOverScreen();
+                    break;
+            }
+        }
+
+        // ==================== GAME LOOP ====================
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
