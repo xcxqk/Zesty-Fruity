@@ -1,2 +1,2 @@
-# touhou-fangame
-this is tiny project.
+#fun game i think
+3
