@@ -25,7 +25,4111 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            background-attachment: fixed;<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <title>Zesty Fruity - Bullet Hell</title>
+    
+    <!-- Add Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Rajdhani', 'Courier New', monospace;
+            user-select: none;
+        }
+        
+        body {
+            /* CUSTOM BACKGROUND IMAGE - YOU NEED TO ADD YOUR IMAGE HERE */
+            background-image: url('img/background-image.jpg'); /* Add your image path here */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             background-attachment: fixed;
+            background-color: #000; /* Fallback color */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: auto;
+            color: #fff;
+            position: relative;
+        }
+        
+        /* Add overlay for better readability */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 480px;
+            height: 640px;
+            margin: 20px;
+            z-index: 1;
+        }
+        
+        /* NEW: Side score display */
+        #sideScore {
+            position: absolute;
+            left: -220px; /* Position to the left of the game */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #8a2be2;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 25px rgba(138, 43, 230, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 2;
+        }
+        
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .score-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #66ffcc;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .score-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        .score-value.high-score {
+            color: #ffcc66;
+            text-shadow: 0 0 10px rgba(255, 204, 102, 0.7);
+        }
+        
+        .score-value.coins {
+            color: #ffcc66;
+            font-size: 24px;
+        }
+        
+        .score-character {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #ff66cc;
+            text-shadow: 0 0 10px rgba(255, 102, 204, 0.7);
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            border: 1px solid #ff66cc;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 800px) {
+            #sideScore {
+                position: relative;
+                left: 0;
+                top: 0;
+                transform: none;
+                width: 100%;
+                max-width: 480px;
+                margin-top: 20px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .score-item {
+                flex: 1;
+                min-width: 150px;
+            }
+            
+            body {
+                flex-direction: column;
+                padding: 20px;
+            }
+        }
+        
+        /* NEW: Spell Card Styles */
+        .spell-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #66ffcc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .spell-card:hover {
+            background: rgba(102, 255, 204, 0.2);
+            transform: scale(1.02);
+        }
+        
+        .spell-card.selected {
+            background: rgba(102, 255, 204, 0.3);
+            border-color: #ffff66;
+            box-shadow: 0 0 15px rgba(255, 255, 102, 0.5);
+        }
+        
+        .spell-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .spell-card-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .spell-card-preview {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .spell-card-details h3 {
+            color: #66ffcc;
+            margin-bottom: 5px;
+        }
+        
+        .spell-card-details p {
+            color: #aaa;
+            font-size: 12px;
+        }
+        
+        .spell-card-requirements {
+            color: #ffcc66;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        .spell-card-status {
+            color: #66ff66;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #8a2be2;
+            border-radius: 8px;
+            padding: 10px;
+            max-width: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+        }
+        
+        .tooltip-title {
+            color: #66ffcc;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .tooltip-desc {
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .tooltip-rarity {
+            color: #ffcc66;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        /* Mobile & responsive improvements (added) */
+        html, body {
+            -webkit-text-size-adjust: 100%;
+            -ms-touch-action: manipulation;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #gameContainer {
+            width: min(480px, calc(100vw - 40px));
+            height: auto;
+        }
+
+        #gameCanvas {
+            touch-action: none;
+            max-width: 100%;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            -webkit-user-select: none;
+            image-rendering: optimizeSpeed;
+        }
+
+        /* Touch controls (hidden on desktop) */
+        .touch-controls {
+            display: none;
+        }
+
+        @media (max-width: 800px) {
+            body { background-attachment: scroll; padding: 12px; }
+            #gameContainer { width: calc(100vw - 24px); margin: 0 auto; }
+            .controls { display: none; } /* hide keyboard helper on mobile */
+            .touch-controls {
+                display: flex;
+                justify-content: space-between;
+                position: absolute;
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                z-index: 6;
+                pointer-events: none;
+                gap: 12px;
+            }
+            .touch-joystick {
+                width: 45%;
+                height: 140px;
+                background: rgba(255,255,255,0.03);
+                border-radius: 12px;
+                pointer-events: auto;
+                touch-action: none;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                user-select: none;
+                position: relative;
+            }
+
+            .joystick-knob {
+                position: absolute;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background: rgba(102,153,255,0.22);
+                border: 2px solid rgba(255,255,255,0.12);
+                box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+                transform: translate(0,0);
+                transition: transform 0.06s linear;
+                pointer-events: none;
+            }
+
+            .joystick-knob.active {
+                background: rgba(102,153,255,0.32);
+                transform: scale(0.98);
+            }
+
+            .touch-btns {
+                display:flex;
+                flex-direction:column;
+                gap:12px;
+                align-items:center;
+                pointer-events:auto;
+            }
+            .touch-btn {
+                width:72px;
+                height:72px;
+                border-radius:50%;
+                background: rgba(102, 153, 255, 0.12);
+                border:2px solid rgba(255,255,255,0.08);
+                color:#fff;
+                font-size:22px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                -webkit-user-select:none;
+            }
+            .touch-btn:active {
+                transform: scale(0.95);
+            }
+        }
+
+        #gameCanvas {
+            background-color: #000;
+            display: block;
+            border: 2px solid #8a2be2;
+            box-shadow: 0 0 20px rgba(138, 43, 230, 0.5);
+        }
+        
+        #loadingScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            flex-direction: column;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            text-align: center;
+        }
+        
+        .title {
+            color: #ff66cc;
+            font-size: 42px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff66cc;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: #66ffcc;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        
+        .button {
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, filter 0.2s;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+        
+        .button:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+        
+        .button:active {
+            transform: scale(0.98);
+        }
+        
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            color: white;
+            font-size: 16px;
+            text-shadow: 1px 1px 2px black;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            border-radius: 5px;
+        }
+        
+        .hud div {
+            margin-bottom: 5px;
+        }
+        
+        .beta {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff9966;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 5;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+
+        /* Pause button */
+        .pause-button {
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            z-index: 60;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 18px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor: pointer;
+        }
+
+        @media (max-width: 800px) {
+            .pause-button { right: 12px; top: 12px; width:48px; height:48px; }
+            #pauseOverlay .title { font-size: 36px; }
+        }
+
+        #pauseOverlay { z-index: 60; }
+        #pauseOverlay .button { margin: 10px; }
+        
+        /* UPDATED: Controls display updated for spell key change */
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #aaa;
+            font-size: 12px;
+            z-index: 5;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 6px;
+            border-radius: 3px;
+        }
+        
+        .lives {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        
+        .life-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            background-color: #66ffcc;
+            border-radius: 50%;
+        }
+        
+        .button-img {
+            display: block;
+            border: none;
+        }
+        
+        .title-img {
+            margin-bottom: 30px;
+            max-width: 80%;
+        }
+        
+        #loadingProgress {
+            color: #66ffcc;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        
+        .bomb-button {
+            position: absolute;
+            bottom: 60px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 100, 100, 0.7);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .bomb-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .store-screen {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+        
+        .store-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #8a2be2;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .store-item img {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+        }
+        
+        .store-button {
+            background: linear-gradient(45deg, #ff9966, #ff66cc);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .store-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .difficulty-screen {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+        
+        .difficulty-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #66ffcc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .difficulty-option:hover {
+            background: rgba(102, 255, 204, 0.2);
+            transform: scale(1.02);
+        }
+        
+        .difficulty-option.selected {
+            background: rgba(102, 255, 204, 0.3);
+            border-color: #ffff66;
+        }
+        
+        .coin-display {
+            position: absolute;
+            top: 10px;
+            right: 60px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: #ffcc66;
+            font-weight: bold;
+        }
+        
+        /* Character selection styles */
+        .character-screen {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+        
+        .character-option {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #66ffcc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .character-option:hover {
+            background: rgba(102, 255, 204, 0.2);
+            transform: scale(1.02);
+        }
+        
+        .character-option.selected {
+            background: rgba(102, 255, 204, 0.3);
+            border-color: #ffff66;
+        }
+        
+        .character-option.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .character-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .character-preview {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            border-radius: 5px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .character-details h3 {
+            color: #66ffcc;
+            margin-bottom: 5px;
+        }
+        
+        .character-details p {
+            color: #aaa;
+            font-size: 12px;
+        }
+        
+        .lock-icon {
+            color: #ff9966;
+            font-size: 20px;
+        }
+        
+        .character-unlock-req {
+            color: #ffcc66;
+            font-size: 12px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        /* NEW: Spell Card Screen */
+        .spellcard-screen {
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+        
+        /* NEW: Placeholder styling for images that fail to load */
+        .placeholder-img {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        /* UI Image Placeholders */
+        .ui-img {
+            display: block;
+            border: none;
+        }
+        
+        .ui-img.failed {
+            display: none;
+        }
+        
+        .ui-img-placeholder {
+            display: none;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            color: #aaa;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 12px;
+        }
+        
+        .ui-img-placeholder.visible {
+            display: block;
+        }
+
+        /* Back button fallback */
+        .btn-fallback--back {
+            background: linear-gradient(180deg, #eeeeee, #cccccc);
+            color: #111;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tooltip for hover information -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <!-- NEW: Side Score Display -->
+    <div id="sideScore" class="hidden">
+        <div class="score-item">
+            <div class="score-label">Current Score</div>
+            <div class="score-value" id="sideScoreDisplay">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">High Score</div>
+            <div class="score-value high-score" id="sideHighScoreDisplay">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">Coins</div>
+            <div class="score-value coins" id="sideCoinsDisplay">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">Character</div>
+            <div class="score-character" id="sideCharacterDisplay">Mangric</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">Spell Card</div>
+            <div class="score-character" id="sideSpellDisplay">None</div>
+        </div>
+    </div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="480" height="640"></canvas>
+        <div id="touchControls" class="touch-controls hidden" aria-hidden="true">
+            <div id="touchJoystick" class="touch-joystick" role="application" aria-label="Movement joystick">
+                <div id="joystickKnob" class="joystick-knob" aria-hidden="true"></div>
+            </div>
+            <div class="touch-btns">
+                <button id="touchShoot" class="touch-btn" aria-label="Shoot">●</button>
+                <button id="touchSpell" class="touch-btn" aria-label="Spell">E</button>
+                <button id="touchBomb" class="touch-btn" aria-label="Bomb">B</button>
+            </div>
+        </div>
+
+        <!-- Pause button (visible on all screens) -->
+        <button id="pauseButton" class="pause-button" title="Pause (P / Esc)" aria-pressed="false">⏸</button>
+
+        <div id="pauseOverlay" class="screen hidden" style="z-index: 60;">
+            <div class="title">Paused</div>
+            <div class="subtitle">Take a breather</div>
+            <button id="resumeButton" class="button">Resume</button>
+            <button id="pauseRetryButton" class="button">Retry</button>
+            <button id="pauseQuitButton" class="button">Quit to Title</button>
+        </div>
+        
+        <div id="loadingScreen" class="screen">
+            <div class="title">Zesty Fruity</div>
+            <div class="subtitle">Loading colorful bullet hell...</div>
+            <div id="loadingProgress">0%</div>
+        </div>
+        
+        <div id="titleScreen" class="screen hidden">
+            <img id="titleImage" class="title-img ui-img" alt="Zesty Fruity">
+            <div id="titleFallback" class="title-fallback">Zesty Fruity</div>
+            
+            <button id="startButton" class="button">
+                <img id="startBtnImage" class="button-img ui-img" alt="START" style="width: 200px; height: 60px;">
+                <span class="btn-fallback btn-fallback--start">🍋 START</span>
+            </button>
+            
+            <button id="storeButton" class="button">
+                <img id="storeBtnImage" class="button-img ui-img" alt="STORE" style="width: 150px; height: 50px;">
+                <span class="btn-fallback btn-fallback--store">🛒 STORE</span>
+            </button>
+            
+            <button id="difficultyButton" class="button">
+                <img id="difficultyBtnImage" class="button-img ui-img" alt="DIFFICULTY" style="width: 150px; height: 50px;">
+                <span class="btn-fallback btn-fallback--difficulty">⚙️ DIFFICULTY</span>
+            </button>
+            
+            <button id="characterButton" class="button">
+                <img id="characterBtnImage" class="button-img ui-img" alt="CHARACTERS" style="width: 150px; height: 50px;">
+                <span class="btn-fallback btn-fallback--character">🎭 CHARACTERS</span>
+            </button>
+            
+            <button id="spellCardButton" class="button">
+                <img id="spellCardBtnImage" class="button-img ui-img" alt="SPELL CARDS" style="width: 150px; height: 50px;">
+                <span class="btn-fallback btn-fallback--spell">✨ SPELLS</span>
+            </button>
+            
+            <button id="continueButton" class="button hidden">
+                <img id="continueBtnImage" class="button-img ui-img" alt="CONTINUE" style="width: 200px; height: 60px;">
+                <span class="btn-fallback btn-fallback--continue">▶ CONTINUE</span>
+            </button>
+        </div>
+        
+        <div id="storeScreen" class="screen hidden">
+            <div class="store-screen">
+                <div class="title">STORE</div>
+                <div id="coinCountStore" style="color: #ffcc66; margin: 10px 0;">Coins: 0</div>
+                
+                <!-- Extra Life Store Item -->
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div id="extraLifeImgPlaceholder" class="placeholder-img" style="width: 32px; height: 32px; margin-right: 10px;">LIFE ICON<br>img/lifeIcon.png</div>
+                        <img id="extraLifeImg" class="ui-img" alt="Extra Life" style="width: 32px; height: 32px; margin-right: 10px;">
+                        <span>Extra Life</span>
+                    </div>
+                    <button id="buyLife" class="store-button">500 Coins</button>
+                </div>
+                
+                <!-- Extra Bomb Store Item -->
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div id="extraBombImgPlaceholder" class="placeholder-img" style="width: 32px; height: 32px; margin-right: 10px;">BOMB ICON<br>img/bombIcon.png</div>
+                        <img id="extraBombImg" class="ui-img" alt="Extra Bomb" style="width: 32px; height: 32px; margin-right: 10px;">
+                        <span>Extra Bomb</span>
+                    </div>
+                    <button id="buyBomb" class="store-button">300 Coins</button>
+                </div>
+                
+                <!-- Shield Store Item -->
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div id="shieldImgPlaceholder" class="placeholder-img" style="width: 32px; height: 32px; margin-right: 10px;">SHIELD ICON<br>img/shieldIcon.png</div>
+                        <img id="shieldImg" class="ui-img" alt="Shield" style="width: 32px; height: 32px; margin-right: 10px;">
+                        <span>Shield (3 hits)</span>
+                    </div>
+                    <button id="buyShield" class="store-button">800 Coins</button>
+                </div>
+                
+                <!-- Power Upgrade Store Item -->
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div id="powerUpImgPlaceholder" class="placeholder-img" style="width: 32px; height: 32px; margin-right: 10px;">POWERUP ICON<br>img/powerup.png</div>
+                        <img id="powerUpImg" class="ui-img" alt="Power Up" style="width: 32px; height: 32px; margin-right: 10px;">
+                        <span>Power Upgrade</span>
+                    </div>
+                    <button id="buyPower" class="store-button">1000 Coins</button>
+                </div>
+                
+                <!-- NEW: Spell Card Store Items -->
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #333333, #666666); color: #ff66cc;">S</div>
+                        <span>Shadow Spiral Spell</span>
+                    </div>
+                    <button id="buySpellShadow" class="store-button">500 Coins</button>
+                </div>
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #ff00ff, #00ffff); color: white;">P</div>
+                        <span>Prism Lance Spell</span>
+                    </div>
+                    <button id="buySpellPrism" class="store-button">500 Coins</button>
+                </div>
+                <div class="store-item">
+                    <div style="display: flex; align-items: center;">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #00ff00, #0000ff); color: white;">G</div>
+                        <span>Ghost Fang Spell</span>
+                    </div>
+                    <button id="buySpellGhost" class="store-button">500 Coins</button>
+                </div>
+                
+                <button id="backFromStore" class="button" style="margin-top: 20px;">
+                    <img id="backBtnImage" class="button-img ui-img" alt="BACK" style="width: 150px; height: 50px;">
+                    <span class="btn-fallback btn-fallback--back">⤴ BACK</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="difficultyScreen" class="screen hidden">
+            <div class="difficulty-screen">
+                <div class="title">DIFFICULTY</div>
+                <div class="difficulty-option" data-level="1">
+                    <h3>EASY</h3>
+                    <p>Slower bullets, more lives</p>
+                </div>
+                <div class="difficulty-option" data-level="2">
+                    <h3>NORMAL</h3>
+                    <p>Standard challenge</p>
+                </div>
+                <div class="difficulty-option" data-level="3">
+                    <h3>HARD</h3>
+                    <p>Faster bullets, less lives</p>
+                </div>
+                <div class="difficulty-option" data-level="4">
+                    <h3>INSANE</h3>
+                    <p>For bullet hell masters</p>
+                </div>
+                
+                <button id="backFromDifficulty" class="button" style="margin-top: 20px;">
+                    <img id="backBtnImage2" class="button-img ui-img" alt="BACK" style="width: 150px; height: 50px;">
+                    <span class="btn-fallback btn-fallback--back">⤴ BACK</span>
+                </button> 
+            </div>
+        </div>
+        
+        <div id="characterScreen" class="screen hidden">
+            <div class="character-screen">
+                <div class="title">CHARACTER SELECT</div>
+                <div class="character-option" data-character="1">
+                    <div class="character-info">
+                        <div class="character-preview" style="background-color: #66ffcc;">M</div>
+                        <div class="character-details">
+                            <h3>MANGRIC</h3>
+                            <p>Standard rapid-fire shots</p>
+                            <p>Good all-around character</p>
+                        </div>
+                    </div>
+                    <div class="character-status">
+                        <div style="color: #66ff66;">SELECTED</div>
+                    </div>
+                </div>
+                <div class="character-option locked" data-character="2">
+                    <div class="character-info">
+                        <div class="character-preview" style="background-color: #ff66cc;">D</div>
+                        <div class="character-details">
+                            <h3>DRATT</h3>
+                            <p>Powerful laser attack</p>
+                            <p>Unlocks at 3,000 points</p>
+                            <div class="character-unlock-req" id="player2UnlockStatus">LOCKED</div>
+                        </div>
+                    </div>
+                    <div class="character-status">
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+                <div class="character-option locked" data-character="3">
+                    <div class="character-info">
+                        <div class="character-preview" style="background-color: #9966ff;">S</div>
+                        <div class="character-details">
+                            <h3>SPECTRAL</h3>
+                            <p>Rare boss drop character</p>
+                            <p>Enhanced homing abilities</p>
+                            <div class="character-unlock-req" id="player3UnlockStatus">BOSS DROP (3%)</div>
+                        </div>
+                    </div>
+                    <div class="character-status">
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+                
+                <button id="backFromCharacter" class="button" style="margin-top: 20px;">
+                    <img id="backBtnImage3" class="button-img ui-img" alt="BACK" style="width: 150px; height: 50px;">
+                    <span class="btn-fallback btn-fallback--back">⤴ BACK</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- NEW: Spell Card Selection Screen -->
+        <div id="spellCardScreen" class="screen hidden">
+            <div class="spellcard-screen">
+                <div class="title">SPELL CARD SELECT</div>
+                <div class="spell-card" data-spell="0">
+                    <div class="spell-card-info">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #888888, #cccccc); color: black;">N</div>
+                        <div class="spell-card-details">
+                            <h3>NONE</h3>
+                            <p>No spell card equipped</p>
+                            <p>Standard bullet patterns only</p>
+                        </div>
+                    </div>
+                    <div class="spell-card-status">
+                        <div style="color: #66ff66;">SELECTED</div>
+                    </div>
+                </div>
+                <div class="spell-card locked" data-spell="1">
+                    <div class="spell-card-info">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #333333, #666666); color: #ff66cc;">S</div>
+                        <div class="spell-card-details">
+                            <h3>SHADOW SPIRAL</h3>
+                            <p>Homing bullets orbit enemies</p>
+                            <p>Moderate speed, medium damage</p>
+                            <div class="spell-card-requirements" id="spell1Status">500 Coins / Boss Drop (5%)</div>
+                        </div>
+                    </div>
+                    <div class="spell-card-status">
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+                <div class="spell-card locked" data-spell="2">
+                    <div class="spell-card-info">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #ff00ff, #00ffff); color: white;">P</div>
+                        <div class="spell-card-details">
+                            <h3>PRISM LANCE</h3>
+                            <p>Rainbow-colored piercing beams</p>
+                            <p>Fast speed, multiple hits</p>
+                            <div class="spell-card-requirements" id="spell2Status">500 Coins / Boss Drop (5%)</div>
+                        </div>
+                    </div>
+                    <div class="spell-card-status">
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+                <div class="spell-card locked" data-spell="3">
+                    <div class="spell-card-info">
+                        <div class="spell-card-preview" style="background: linear-gradient(45deg, #00ff00, #0000ff); color: white;">G</div>
+                        <div class="spell-card-details">
+                            <h3>GHOST FANG</h3>
+                            <p>Spectral homing spikes</p>
+                            <p>Very fast, high damage</p>
+                            <div class="spell-card-requirements" id="spell3Status">500 Coins / Boss Drop (5%)</div>
+                        </div>
+                    </div>
+                    <div class="spell-card-status">
+                        <div class="lock-icon">🔒</div>
+                    </div>
+                </div>
+                
+                <button id="backFromSpellCard" class="button" style="margin-top: 20px;">
+                    <img id="backBtnImage4" class="button-img ui-img" alt="BACK" style="width: 150px; height: 50px;">
+                    <span class="btn-fallback btn-fallback--back">⤴ BACK</span>
+                </button>
+            </div>
+        </div>
+        
+        <div id="gameOverScreen" class="screen hidden">
+            <!-- GAME OVER Image with Placeholder -->
+            <div id="gameOverImagePlaceholder" class="title-img placeholder-img" style="max-width: 70%;">GAME OVER IMAGE<br>img/gameOver.png</div>
+            <img id="gameOverImage" class="title-img ui-img" alt="GAME OVER" style="max-width: 70%;">
+            
+            <div id="finalScore" style="color: #ffcc66; font-size: 24px; margin-bottom: 10px;">Score: 0</div>
+            <div id="coinsEarned" style="color: #66ffcc; font-size: 18px; margin-bottom: 20px;">Coins Earned: 0</div>
+            <div id="dropMessage" style="color: #ff66cc; font-size: 16px; margin-bottom: 10px; display: none;"></div>
+            
+            <!-- RETRY Button with Placeholder -->
+            <div id="retryImagePlaceholder" class="button placeholder-img" style="width: 150px; height: 50px;">RETRY BUTTON<br>img/retry.png</div>
+            <button id="retryButton" class="button">
+                <img id="retryImage" class="button-img ui-img" alt="RETRY" style="width: 150px; height: 50px;">
+            </button>
+            
+            <!-- GIVE UP Button with Placeholder -->
+            <div id="giveUpImagePlaceholder" class="button placeholder-img" style="width: 150px; height: 50px;">GIVE UP BUTTON<br>img/giveUp.png</div>
+            <button id="giveUpButton" class="button">
+                <img id="giveUpImage" class="button-img ui-img" alt="GIVE UP" style="width: 150px; height: 50px;">
+            </button>
+        </div>
+        
+        <div id="hud" class="hud hidden">
+            <div>SCORE: <span id="scoreDisplay">0</span></div>
+            <div>HIGH: <span id="highScoreDisplay">0</span></div>
+            <div>LIVES: <span id="livesDisplay">3</span></div>
+            <div>BOMBS: <span id="bombsDisplay">3</span></div>
+            <div>COINS: <span id="coinsDisplay">0</span></div>
+            <div>CHAR: <span id="characterDisplay">Mangric</span></div>
+            <div>SPELL: <span id="spellDisplay">None</span></div>
+        </div>
+        
+        <div class="coin-display hidden" id="coinHUD">🪙 0</div>
+        
+        <div class="beta">BETA</div>
+        
+        <!-- UPDATED: Controls display - Changed SPELL from S to E -->
+        <div class="controls">
+            MOVE: WASD / ARROWS<br>
+            SHOOT: SPACE<br>
+            BOMB: B<br>
+            SPELL: E (Hold)
+        </div>
+        
+        <button id="bombButton" class="bomb-button hidden" title="BOMB (B)">B</button>
+    </div>
+
+    <script>
+        // Game constants - UPDATED VALUES
+        const CANVAS_WIDTH = 480;
+        const CANVAS_HEIGHT = 640;
+        const PLAYER_SPEED = 5;
+        const PLAYER_HITBOX_RADIUS = 2;
+        const INITIAL_LIVES = 3;
+        const INITIAL_BOMBS = 3;
+        const INITIAL_CONTINUES = 3;
+        const ENEMY_SPAWN_RATE = 150;
+        const ENEMY2_UNLOCK_SCORE = 1500;
+        const INVINCIBILITY_TIME = 120;
+        const PLAYER2_UNLOCK_SCORE = 3000; // REDUCED: Score needed to unlock Player 2
+        const BOSS_SPAWN_SCORE = 10000;
+        
+        // NEW: Enemy shooting parameters - REDUCED FREQUENCY
+        const ENEMY1_BASE_SHOOT_DELAY = 120; // 2 seconds at 60fps (increased from 100)
+        const ENEMY2_BASE_SHOOT_DELAY = 150; // 2.5 seconds at 60fps (increased from 130)
+        const PATTERN_CHANGE_AFTER_ATTACKS = 3; // Change pattern every 3 attacks
+        
+        // NEW: Spell card parameters
+        const SPELL_CARD_PRICE = 500;
+        const SPELL_DROP_CHANCE = 0.05; // 5% from bosses
+        const CHARACTER_DROP_CHANCE = 0.03; // 3% from bosses
+        
+        // NEW: Spell card bullet speeds (200ms = 5 pixels/frame at 60fps)
+        const BULLET_SPEED = 5; // ~200ms across screen
+        const SPELL_BULLET_SPEEDS = {
+            1: 7,  // Shadow Spiral
+            2: 10, // Prism Lance
+            3: 12  // Ghost Fang
+        };
+        const SPELL_HOMING_SPEEDS = {
+            1: 2.5, // Shadow Spiral
+            2: 1.5, // Prism Lance
+            3: 3.0  // Ghost Fang
+        };
+        
+        // Game state
+        let gameState = 'loading';
+        let score = 0;
+        let highScore = 0;
+        let coins = 0;
+        let totalCoins = 0;
+        let lives = INITIAL_LIVES;
+        let bombs = INITIAL_BOMBS;
+        let continues = INITIAL_CONTINUES;
+        let frameCount = 0;
+        let difficulty = 2;
+        let selectedDifficulty = 2;
+        let playerHasShield = false;
+        let shieldHits = 0;
+        let powerLevel = 1;
+        let player2Unlocked = false;
+        let player3Unlocked = false; // NEW: Third character unlock status
+        let selectedCharacter = 1; // 1 = Mangric, 2 = Dratt, 3 = Spectral
+        let selectedSpellCard = 0; // NEW: 0 = None, 1 = Shadow Spiral, 2 = Prism Lance, 3 = Ghost Fang
+        let spellCardsUnlocked = [true, false, false, false]; // NEW: Track unlocked spell cards (index 0 is "None")
+        let isChargingSpell = false;
+        let spellCharge = 0;
+        const SPELL_CHARGE_TIME = 180; // 3 seconds at 60fps
+        
+        // Game objects
+        let player = null;
+        let enemies = [];
+        let playerBullets = [];
+        let enemyBullets = [];
+        let particles = [];
+        let coinsOnScreen = [];
+        let powerUps = [];
+        let spellBullets = []; // NEW: Spell card bullets
+        let backgroundY = 0;
+        
+        // Input tracking
+        const keys = {};
+        // Virtual joystick axis for touch input, normalized -1..1
+        const joystickAxis = { x: 0, y: 0 };
+        
+        // Canvas context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Mobile & high-DPI canvas resizing
+        function resizeCanvasForMobile() {
+            const dpr = Math.max(window.devicePixelRatio || 1, 1);
+            const padding = 24;
+            let maxWidth = Math.min(CANVAS_WIDTH, window.innerWidth - padding);
+            // Make sure we don't enlarge beyond designed canvas width
+            if (window.innerWidth >= CANVAS_WIDTH) maxWidth = CANVAS_WIDTH;
+            const scale = Math.max(0.5, maxWidth / CANVAS_WIDTH);
+            // Set CSS size
+            canvas.style.width = Math.round(CANVAS_WIDTH * scale) + 'px';
+            canvas.style.height = Math.round(CANVAS_HEIGHT * scale) + 'px';
+            // Set backing resolution for crispness
+            canvas.width = Math.round(CANVAS_WIDTH * scale * dpr);
+            canvas.height = Math.round(CANVAS_HEIGHT * scale * dpr);
+            // Map drawing coordinates back to logical canvas units
+            ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+        }
+
+        function setupTouchControls() {
+            const touchControls = document.getElementById('touchControls');
+            // Only show on touch devices
+            if (!('ontouchstart' in window) && navigator.maxTouchPoints === 0) return;
+            touchControls.classList.remove('hidden');
+            document.querySelector('.controls')?.classList.add('hidden');
+
+            // Joystick
+            const joystick = document.getElementById('touchJoystick');
+            let activeId = null;
+            const knob = document.getElementById('joystickKnob');
+            function updateJoystickTouch(t) {
+                const rect = joystick.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const dx = t.clientX - cx;
+                const dy = t.clientY - cy;
+                const max = Math.min(rect.width, rect.height) / 2 - 12; // max travel for knob
+                // normalized axis -1..1 (y positive downwards)
+                const nx = Math.max(-1, Math.min(1, dx / max));
+                const ny = Math.max(-1, Math.min(1, dy / max));
+                joystickAxis.x = nx;
+                joystickAxis.y = ny;
+
+                // Move visual knob (limit to container quarter for better visuals)
+                const knobX = nx * (rect.width / 4);
+                const knobY = ny * (rect.height / 4);
+                if (knob) {
+                    knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+                    knob.classList.add('active');
+                }
+
+                // Small deadzone for boolean key mapping
+                const deadNormalized = 0.15;
+                keys['ArrowLeft'] = nx < -deadNormalized;
+                keys['ArrowRight'] = nx > deadNormalized;
+                keys['ArrowUp'] = ny < -deadNormalized;
+                keys['ArrowDown'] = ny > deadNormalized;
+            }
+            joystick.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                activeId = e.changedTouches[0].identifier;
+                updateJoystickTouch(e.changedTouches[0]);
+            }, {passive:false});
+            joystick.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                for (const t of e.changedTouches) {
+                    if (t.identifier === activeId) { updateJoystickTouch(t); break; }
+                }
+            }, {passive:false});
+            joystick.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                for (const t of e.changedTouches) {
+                    if (t.identifier === activeId) {
+                        activeId = null;
+                        keys['ArrowLeft'] = keys['ArrowRight'] = keys['ArrowUp'] = keys['ArrowDown'] = false;
+                        joystickAxis.x = 0; joystickAxis.y = 0;
+                        if (knob) { knob.style.transform = 'translate(0,0)'; knob.classList.remove('active'); }
+                        break;
+                    }
+                }
+            }, {passive:false});
+
+            // Buttons
+            function makeTouchButton(id, key, hold=false) {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                    btn.setAttribute('aria-pressed', 'true');
+                    if (!hold) {
+                        // If not a hold button (bomb), simulate quick press
+                        setTimeout(() => { keys[key] = false; btn.setAttribute('aria-pressed', 'false'); }, 120);
+                    }
+                }, {passive:false});
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    if (hold) keys[key] = false;
+                    btn.setAttribute('aria-pressed', 'false');
+                }, {passive:false});
+                btn.addEventListener('touchcancel', (e) => {
+                    if (hold) keys[key] = false;
+                    btn.setAttribute('aria-pressed', 'false');
+                });
+            }
+            makeTouchButton('touchShoot', ' ', true);
+            makeTouchButton('touchSpell', 'e', true);
+            makeTouchButton('touchBomb', 'b', false);
+        }
+
+        // Call resize on load and on window changes
+        window.addEventListener('resize', resizeCanvasForMobile);
+        window.addEventListener('orientationchange', () => { setTimeout(resizeCanvasForMobile, 200); });
+
+        // Run once now to set sizes
+        resizeCanvasForMobile();
+        // Setup touch controls if available
+        setupTouchControls();
+
+        // Audio elements
+        const audio = {
+            backgroundMusic: new Audio(),
+            shootSound: new Audio(),
+            explosionSound: new Audio(),
+            coinSound: new Audio(),
+            bombSound: new Audio(),
+            powerupSound: new Audio(),
+            hitSound: new Audio(),
+            gameOverSound: new Audio(),
+            bossMusic: new Audio(),
+            bossWarningSound: new Audio(),
+            spellChargeSound: new Audio(),
+            spellFireSound: new Audio()
+        };
+
+        // Pause state
+        let isPaused = false;
+        const audioWasPlaying = { backgroundMusic: false, bossMusic: false };
+
+        function pauseGame() {
+            if (isPaused) return;
+            isPaused = true;
+            const overlay = document.getElementById('pauseOverlay');
+            if (overlay) overlay.classList.remove('hidden');
+            document.getElementById('pauseButton')?.setAttribute('aria-pressed', 'true');
+            // Remember audio state and pause
+            audioWasPlaying.backgroundMusic = !audio.backgroundMusic.paused;
+            audioWasPlaying.bossMusic = !audio.bossMusic.paused;
+            try { audio.backgroundMusic.pause(); } catch (e) {}
+            try { audio.bossMusic.pause(); } catch (e) {}
+        }
+
+        function resumeGame() {
+            if (!isPaused) return;
+            isPaused = false;
+            const overlay = document.getElementById('pauseOverlay');
+            if (overlay) overlay.classList.add('hidden');
+            document.getElementById('pauseButton')?.setAttribute('aria-pressed', 'false');
+            // Resume audio if it was playing
+            if (audioWasPlaying.backgroundMusic) { audio.backgroundMusic.play().catch(()=>{}); }
+            if (audioWasPlaying.bossMusic) { audio.bossMusic.play().catch(()=>{}); }
+        }
+
+        function togglePause() {
+            if (isPaused) resumeGame(); else pauseGame();
+        }
+        
+        // Image assets - UPDATED WITH ALL UI IMAGES
+        const images = {
+            // Player characters
+            player1: null,
+            player2: null,
+            player3: null, // NEW: Third character
+            
+            // Game objects
+            playerBullet: null,
+            playerBullet2: null,
+            enemyBullet: null,
+            enemy1: null,
+            enemy2: null,
+            boss: null,
+            
+            // Background
+            background: null,
+            
+            // Collectibles
+            coin: null,
+            powerup: null,
+            
+            // UI Images - Title Screen
+            title: null,
+            startBtn: null,
+            storeBtn: null,
+            difficultyBtn: null,
+            characterBtn: null,
+            spellCardBtn: null,
+            continueBtn: null,
+            backBtn: null,
+            
+            // UI Images - Game Over Screen
+            gameOver: null,
+            retry: null,
+            giveUp: null,
+            
+            // UI Images - Store Screen
+            bombIcon: null,
+            lifeIcon: null,
+            shieldIcon: null,
+            
+            // Effects
+            bombEffect: null,
+            
+            // Boss specific
+            bossGameOver: null
+        };
+        
+        // Store items
+        const storeItems = {
+            extraLife: { price: 500, owned: 0, max: 10 },
+            extraBomb: { price: 300, owned: 0, max: 10 },
+            shield: { price: 800, owned: 0, max: 5 },
+            powerUp: { price: 1000, owned: 0, max: 3 },
+            spellShadow: { price: SPELL_CARD_PRICE, owned: false },
+            spellPrism: { price: SPELL_CARD_PRICE, owned: false },
+            spellGhost: { price: SPELL_CARD_PRICE, owned: false }
+        };
+        
+        // Track loaded images
+        let imagesLoaded = 0;
+        const totalImages = Object.keys(images).length;
+        
+        // Tooltip system
+        const tooltip = document.getElementById('tooltip');
+        
+        // Initialize tooltip events
+        function initTooltips() {
+            const elementsWithTooltip = [
+                '.character-option',
+                '.spell-card',
+                '.difficulty-option',
+                '.store-item',
+                '.store-button',
+                '.button'
+            ];
+            
+            elementsWithTooltip.forEach(selector => {
+                document.querySelectorAll(selector).forEach(element => {
+                    element.addEventListener('mouseenter', showTooltip);
+                    element.addEventListener('mousemove', moveTooltip);
+                    element.addEventListener('mouseleave', hideTooltip);
+                });
+            });
+        }
+        
+        function showTooltip(e) {
+            const element = e.currentTarget;
+            let title = '';
+            let description = '';
+            let rarity = '';
+            
+            // Determine content based on element type
+            if (element.classList.contains('character-option')) {
+                const charId = element.dataset.character;
+                if (charId === '1') {
+                    title = 'MANGRIC';
+                    description = 'Standard rapid-fire character. Good for beginners.';
+                    rarity = 'COMMON';
+                } else if (charId === '2') {
+                    title = 'DRATT';
+                    description = 'Unlocks at 3,000 points. Powerful laser attacks.';
+                    rarity = 'UNLOCKABLE';
+                } else if (charId === '3') {
+                    title = 'SPECTRAL';
+                    description = 'Rare boss drop (3% chance). Enhanced homing abilities.';
+                    rarity = 'LEGENDARY';
+                }
+            } else if (element.classList.contains('spell-card')) {
+                const spellId = element.dataset.spell;
+                if (spellId === '0') {
+                    title = 'NO SPELL CARD';
+                    description = 'Use standard bullet patterns only.';
+                    rarity = 'BASIC';
+                } else if (spellId === '1') {
+                    title = 'SHADOW SPIRAL';
+                    description = 'Homing bullets that orbit enemies. Moderate speed, medium damage.';
+                    rarity = 'RARE';
+                } else if (spellId === '2') {
+                    title = 'PRISM LANCE';
+                    description = 'Rainbow-colored piercing beams. Fast speed, multiple hits.';
+                    rarity = 'RARE';
+                } else if (spellId === '3') {
+                    title = 'GHOST FANG';
+                    description = 'Spectral homing spikes. Very fast, high damage.';
+                    rarity = 'RARE';
+                }
+            } else if (element.classList.contains('store-button')) {
+                title = element.textContent;
+                description = 'Click to purchase this item.';
+                if (element.disabled) {
+                    description = 'Already purchased or insufficient coins.';
+                }
+            }
+            
+            if (title) {
+                tooltip.innerHTML = `
+                    <div class="tooltip-title">${title}</div>
+                    <div class="tooltip-desc">${description}</div>
+                    ${rarity ? `<div class="tooltip-rarity">${rarity}</div>` : ''}
+                `;
+                tooltip.style.display = 'block';
+            }
+        }
+        
+        function moveTooltip(e) {
+            tooltip.style.left = (e.clientX + 15) + 'px';
+            tooltip.style.top = (e.clientY + 15) + 'px';
+        }
+        
+        function hideTooltip() {
+            tooltip.style.display = 'none';
+        }
+        
+        // Load all game data from localStorage
+        function loadGameData() {
+            try {
+                const savedHighScore = localStorage.getItem('zestyFruityHighScore');
+                highScore = savedHighScore ? parseInt(savedHighScore) : 0;
+                
+                const savedCoins = localStorage.getItem('zestyFruityCoins');
+                coins = savedCoins ? parseInt(savedCoins) : 0;
+                totalCoins = coins;
+                
+                const savedStore = localStorage.getItem('zestyFruityStore');
+                if (savedStore) {
+                    const storeData = JSON.parse(savedStore);
+                    Object.assign(storeItems, storeData);
+                }
+                
+                const savedDifficulty = localStorage.getItem('zestyFruityDifficulty');
+                selectedDifficulty = savedDifficulty ? parseInt(savedDifficulty) : 2;
+                
+                // Load player unlock status
+                const savedPlayer2Unlocked = localStorage.getItem('zestyFruityPlayer2Unlocked');
+                player2Unlocked = savedPlayer2Unlocked ? JSON.parse(savedPlayer2Unlocked) : false;
+                
+                const savedPlayer3Unlocked = localStorage.getItem('zestyFruityPlayer3Unlocked');
+                player3Unlocked = savedPlayer3Unlocked ? JSON.parse(savedPlayer3Unlocked) : false;
+                
+                // Load selected character
+                const savedCharacter = localStorage.getItem('zestyFruityCharacter');
+                selectedCharacter = savedCharacter ? parseInt(savedCharacter) : 1;
+                
+                // NEW: Load spell card data
+                const savedSelectedSpell = localStorage.getItem('zestyFruitySelectedSpell');
+                selectedSpellCard = savedSelectedSpell ? parseInt(savedSelectedSpell) : 0;
+                
+                const savedSpellsUnlocked = localStorage.getItem('zestyFruitySpellsUnlocked');
+                if (savedSpellsUnlocked) {
+                    spellCardsUnlocked = JSON.parse(savedSpellsUnlocked);
+                }
+                
+                updateUI();
+            } catch (e) {
+                console.log("Could not load game data:", e);
+            }
+        }
+        
+        // Save game data to localStorage
+        function saveGameData() {
+            try {
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('zestyFruityHighScore', highScore.toString());
+                }
+                localStorage.setItem('zestyFruityCoins', coins.toString());
+                localStorage.setItem('zestyFruityStore', JSON.stringify(storeItems));
+                localStorage.setItem('zestyFruityDifficulty', selectedDifficulty.toString());
+                localStorage.setItem('zestyFruityPlayer2Unlocked', player2Unlocked.toString());
+                localStorage.setItem('zestyFruityPlayer3Unlocked', player3Unlocked.toString());
+                localStorage.setItem('zestyFruityCharacter', selectedCharacter.toString());
+                
+                // NEW: Save spell card data
+                localStorage.setItem('zestyFruitySelectedSpell', selectedSpellCard.toString());
+                localStorage.setItem('zestyFruitySpellsUnlocked', JSON.stringify(spellCardsUnlocked));
+            } catch (e) {
+                console.log("Could not save game data:", e);
+            }
+        }
+        
+        // NEW: Check if player2 should be unlocked
+        function checkPlayer2Unlock() {
+            if (!player2Unlocked && highScore >= PLAYER2_UNLOCK_SCORE) {
+                player2Unlocked = true;
+                localStorage.setItem('zestyFruityPlayer2Unlocked', 'true');
+                updateCharacterSelection();
+            }
+        }
+        
+        // NEW: Check for random drops from boss
+        function checkBossDrops(enemy) {
+            if (enemy.isBoss && enemy.health <= 0) {
+                // Check for character drop
+                if (!player3Unlocked && Math.random() < CHARACTER_DROP_CHANCE) {
+                    player3Unlocked = true;
+                    localStorage.setItem('zestyFruityPlayer3Unlocked', 'true');
+                    
+                    // Show drop message
+                    const dropMessage = document.getElementById('dropMessage');
+                    if (dropMessage) {
+                        dropMessage.textContent = '★ RARE DROP: SPECTRAL character unlocked! ★';
+                        dropMessage.style.display = 'block';
+                    }
+                }
+                
+                // Check for spell card drops
+                for (let i = 1; i <= 3; i++) {
+                    if (!spellCardsUnlocked[i] && Math.random() < SPELL_DROP_CHANCE) {
+                        spellCardsUnlocked[i] = true;
+                        
+                        // Show drop message
+                        const dropMessage = document.getElementById('dropMessage');
+                        if (dropMessage) {
+                            const spellNames = ['', 'Shadow Spiral', 'Prism Lance', 'Ghost Fang'];
+                            dropMessage.textContent = `★ RARE DROP: ${spellNames[i]} spell card unlocked! ★`;
+                            dropMessage.style.display = 'block';
+                        }
+                    }
+                }
+                
+                saveGameData();
+                updateSpellCardSelection();
+                updateCharacterSelection();
+            }
+        }
+        
+        // NEW: Update character selection screen
+        function updateCharacterSelection() {
+            const characterOptions = document.querySelectorAll('.character-option');
+            
+            characterOptions.forEach(option => {
+                const characterId = parseInt(option.dataset.character);
+                const unlockStatus = document.getElementById(`player${characterId}UnlockStatus`);
+                
+                if (characterId === 1) {
+                    // Mangric is always unlocked
+                    option.classList.remove('locked');
+                    if (unlockStatus) unlockStatus.textContent = "UNLOCKED";
+                    
+                    if (selectedCharacter === 1) {
+                        option.classList.add('selected');
+                        option.querySelector('.character-status').innerHTML = '<div style="color: #66ff66;">SELECTED</div>';
+                    } else {
+                        option.classList.remove('selected');
+                        option.querySelector('.character-status').innerHTML = '';
+                    }
+                } else if (characterId === 2) {
+                    // Dratt - score unlock
+                    if (player2Unlocked) {
+                        option.classList.remove('locked');
+                        if (unlockStatus) unlockStatus.textContent = "UNLOCKED!";
+                        
+                        if (selectedCharacter === 2) {
+                            option.classList.add('selected');
+                            option.querySelector('.character-status').innerHTML = '<div style="color: #66ff66;">SELECTED</div>';
+                        } else {
+                            option.classList.remove('selected');
+                            option.querySelector('.character-status').innerHTML = '';
+                        }
+                    } else {
+                        option.classList.add('locked');
+                        if (unlockStatus) unlockStatus.textContent = `Need ${PLAYER2_UNLOCK_SCORE} points to unlock`;
+                        option.querySelector('.character-status').innerHTML = '<div class="lock-icon">🔒</div>';
+                    }
+                } else if (characterId === 3) {
+                    // Spectral - boss drop
+                    if (player3Unlocked) {
+                        option.classList.remove('locked');
+                        if (unlockStatus) unlockStatus.textContent = "UNLOCKED!";
+                        
+                        if (selectedCharacter === 3) {
+                            option.classList.add('selected');
+                            option.querySelector('.character-status').innerHTML = '<div style="color: #66ff66;">SELECTED</div>';
+                        } else {
+                            option.classList.remove('selected');
+                            option.querySelector('.character-status').innerHTML = '';
+                        }
+                    } else {
+                        option.classList.add('locked');
+                        if (unlockStatus) unlockStatus.textContent = "BOSS DROP (3%)";
+                        option.querySelector('.character-status').innerHTML = '<div class="lock-icon">🔒</div>';
+                    }
+                }
+            });
+        }
+        
+        // NEW: Update spell card selection screen
+        function updateSpellCardSelection() {
+            const spellCards = document.querySelectorAll('.spell-card');
+            
+            spellCards.forEach(card => {
+                const spellId = parseInt(card.dataset.spell);
+                
+                if (spellId === 0) {
+                    // "None" is always available
+                    card.classList.remove('locked');
+                    if (selectedSpellCard === 0) {
+                        card.classList.add('selected');
+                        card.querySelector('.spell-card-status').innerHTML = '<div style="color: #66ff66;">SELECTED</div>';
+                    } else {
+                        card.classList.remove('selected');
+                        card.querySelector('.spell-card-status').innerHTML = '';
+                    }
+                } else {
+                    // Other spell cards
+                    if (spellCardsUnlocked[spellId]) {
+                        card.classList.remove('locked');
+                        const statusElement = card.querySelector('.spell-card-status');
+                        
+                        if (selectedSpellCard === spellId) {
+                            card.classList.add('selected');
+                            statusElement.innerHTML = '<div style="color: #66ff66;">SELECTED</div>';
+                        } else {
+                            card.classList.remove('selected');
+                            statusElement.innerHTML = '';
+                        }
+                    } else {
+                        card.classList.add('locked');
+                        const unlockText = storeItems[`spell${['', 'Shadow', 'Prism', 'Ghost'][spellId]}`].owned ? "OWNED - EQUIP TO USE" : `${SPELL_CARD_PRICE} Coins / Boss Drop (5%)`;
+                        const statusElement = document.getElementById(`spell${spellId}Status`);
+                        if (statusElement) statusElement.textContent = unlockText;
+                        card.querySelector('.spell-card-status').innerHTML = '<div class="lock-icon">🔒</div>';
+                    }
+                }
+            });
+            
+            // Update store buttons
+            const spellButtons = ['buySpellShadow', 'buySpellPrism', 'buySpellGhost'];
+            spellButtons.forEach((btnId, index) => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    const spellIndex = index + 1;
+                    btn.disabled = coins < SPELL_CARD_PRICE || spellCardsUnlocked[spellIndex] || storeItems[`spell${['Shadow', 'Prism', 'Ghost'][index]}`].owned;
+                }
+            });
+        }
+        
+        // Duplicate functions for character and spell screens were removed here to keep canonical
+        // implementations consolidated later in the file.
+        
+        // NEW: Update side score display
+        function updateSideScore() {
+            const sideScoreDisplay = document.getElementById('sideScoreDisplay');
+            const sideHighScoreDisplay = document.getElementById('sideHighScoreDisplay');
+            const sideCoinsDisplay = document.getElementById('sideCoinsDisplay');
+            const sideCharacterDisplay = document.getElementById('sideCharacterDisplay');
+            const sideSpellDisplay = document.getElementById('sideSpellDisplay');
+            
+            if (sideScoreDisplay) sideScoreDisplay.textContent = score.toLocaleString();
+            if (sideHighScoreDisplay) sideHighScoreDisplay.textContent = highScore.toLocaleString();
+            if (sideCoinsDisplay) sideCoinsDisplay.textContent = coins.toLocaleString();
+            
+            // Update character name
+            const charNames = ['', 'Mangric', 'Dratt', 'Spectral'];
+            if (sideCharacterDisplay) sideCharacterDisplay.textContent = charNames[selectedCharacter] || 'Mangric';
+            
+            // Update spell card name
+            const spellNames = ['None', 'Shadow Spiral', 'Prism Lance', 'Ghost Fang'];
+            if (sideSpellDisplay) sideSpellDisplay.textContent = spellNames[selectedSpellCard] || 'None';
+        }
+        
+        // Create placeholder images for missing assets
+        function createPlaceholder(color, text = '', width = 32, height = 32) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = color;
+                ctx.fillRect(0, 0, width, height);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(1, 1, width-2, height-2);
+                
+                if (text) {
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold ' + Math.min(width/3, 14) + 'px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(text, width/2, height/2);
+                }
+                
+                return canvas;
+            } catch (e) {
+                console.log("Error creating placeholder:", e);
+                return null;
+            }
+        }
+        
+        // Handle image loading with improved placeholder system
+        function handleImageLoad(key, url, placeholderColor, placeholderText, width = 32, height = 32, isGameObject = false) {
+            const img = new Image();
+            img.onload = () => {
+                images[key] = img;
+                imagesLoaded++;
+                updateLoadingProgress();
+                
+                // Update UI elements if this is a UI image
+                if (!isGameObject) {
+                    updateUIImage(key, img.src);
+                }
+            };
+            
+            img.onerror = () => {
+                console.log(`Failed to load ${url}, using placeholder`);
+                const placeholder = createPlaceholder(placeholderColor, placeholderText, width, height);
+                if (placeholder) {
+                    images[key] = placeholder;
+                }
+                imagesLoaded++;
+                updateLoadingProgress();
+                
+                // Show placeholder for UI images and visible fallbacks
+                if (!isGameObject) {
+                    showPlaceholder(key);
+                    // Also show text fallbacks for title/buttons if present
+                    try {
+                        showFallbackForKey(key);
+                    } catch (e) {}
+                }
+            };
+            
+            img.src = url;
+        }
+        
+        // Update UI image elements
+        function updateUIImage(key, src) {
+            const uiElements = {
+                'title': ['titleImage'],
+                'startBtn': ['startBtnImage'],
+                'storeBtn': ['storeBtnImage'],
+                'difficultyBtn': ['difficultyBtnImage'],
+                'characterBtn': ['characterBtnImage'],
+                'spellCardBtn': ['spellCardBtnImage'],
+                'continueBtn': ['continueBtnImage'],
+                'backBtn': ['backBtnImage', 'backBtnImage2', 'backBtnImage3', 'backBtnImage4'],
+                'gameOver': ['gameOverImage'],
+                'retry': ['retryImage'],
+                'giveUp': ['giveUpImage'],
+                'bombIcon': ['extraBombImg'],
+                'lifeIcon': ['extraLifeImg'],
+                'shieldIcon': ['shieldImg'],
+                'powerup': ['powerUpImg'],
+                'coin': ['extraLifeImg'] // Coin icon also used in store
+            };
+            
+            if (uiElements[key]) {
+                uiElements[key].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.src = src;
+                        element.classList.remove('failed');
+
+                        // Hide corresponding placeholders (support different naming conventions)
+                        const placeholderCandidates = [
+                            `${id}Placeholder`,                        // e.g. titleImagePlaceholder
+                            `${id.replace(/Image$/, '')}Placeholder`,  // e.g. startBtnPlaceholder
+                            `${id.replace(/Img$/, '')}Placeholder`     // fallback: extraLifeImg -> extraLifePlaceholder
+                        ];
+                        placeholderCandidates.forEach(pid => {
+                            const placeholder = document.getElementById(pid);
+                            if (placeholder) placeholder.classList.add('hidden');
+                        });
+
+                        // Hide any button fallback span inside the button that contains this image
+                        try {
+                            const btnAncestor = element.closest('button');
+                            if (btnAncestor) {
+                                const btnFallback = btnAncestor.querySelector('.btn-fallback');
+                                if (btnFallback) btnFallback.classList.add('hidden');
+                            }
+                        } catch (e) {}
+
+                        // Hide title fallback if this is the title image
+                        if (id.toLowerCase().includes('title') || key === 'title') {
+                            const titleFallback = document.getElementById('titleFallback');
+                            if (titleFallback) titleFallback.classList.add('hidden');
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Show placeholder for UI image
+        function showPlaceholder(key) {
+            const placeholderMap = {
+                'title': ['titleImagePlaceholder'],
+                'startBtn': ['startBtnPlaceholder'],
+                'storeBtn': ['storeBtnPlaceholder'],
+                'difficultyBtn': ['difficultyBtnPlaceholder'],
+                'characterBtn': ['characterBtnPlaceholder'],
+                'spellCardBtn': ['spellCardBtnPlaceholder'],
+                'continueBtn': ['continueBtnPlaceholder'],
+                'backBtn': ['backBtnPlaceholderStore', 'backBtnPlaceholderDifficulty', 'backBtnPlaceholderCharacter', 'backBtnPlaceholderSpellCard'],
+                'gameOver': ['gameOverImagePlaceholder'],
+                'retry': ['retryImagePlaceholder'],
+                'giveUp': ['giveUpImagePlaceholder'],
+                'bombIcon': ['extraBombImgPlaceholder'],
+                'lifeIcon': ['extraLifeImgPlaceholder'],
+                'shieldIcon': ['shieldImgPlaceholder'],
+                'powerup': ['powerUpImgPlaceholder'],
+                'coin': ['extraLifeImgPlaceholder'] // Same as life icon
+            };
+            
+            if (placeholderMap[key]) {
+                placeholderMap[key].forEach(id => {
+                    const placeholder = document.getElementById(id);
+                    if (placeholder) {
+                        placeholder.classList.remove('hidden');
+                    }
+                });
+            }
+        }
+
+        // Show text-based fallbacks for title/buttons when UI images fail
+        function showFallbackForKey(key) {
+            try {
+                if (key === 'title') {
+                    const titleFallback = document.getElementById('titleFallback');
+                    if (titleFallback) titleFallback.classList.remove('hidden');
+                    const titleImg = document.getElementById('titleImage');
+                    if (titleImg) titleImg.classList.add('failed');
+                    return;
+                }
+
+                const mapping = {
+                    'startBtn': ['startBtnImage'],
+                    'storeBtn': ['storeBtnImage'],
+                    'difficultyBtn': ['difficultyBtnImage'],
+                    'characterBtn': ['characterBtnImage'],
+                    'spellCardBtn': ['spellCardBtnImage'],
+                    'continueBtn': ['continueBtnImage']
+                };
+
+                if (mapping[key]) {
+                    mapping[key].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.classList.add('failed');
+                            const fb = el.parentElement ? el.parentElement.querySelector('.btn-fallback') : null;
+                            if (fb) fb.classList.remove('hidden');
+                        }
+                    });
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        
+        // Handle audio loading
+        function loadAudio() {
+            audio.backgroundMusic.src = 'audio/background.mp3';
+            audio.shootSound.src = 'audio/shoot.wav';
+            audio.explosionSound.src = 'audio/explosion.wav';
+            audio.coinSound.src = 'audio/coin.wav';
+            audio.bombSound.src = 'audio/bomb.wav';
+            audio.powerupSound.src = 'audio/powerup.wav';
+            audio.hitSound.src = 'audio/hit.wav';
+            audio.gameOverSound.src = 'audio/game-over.wav';
+            audio.bossMusic.src = 'audio/boss-music.mp3';
+            audio.bossWarningSound.src = 'audio/boss-warning.wav';
+            audio.spellChargeSound.src = 'audio/spell-charge.wav';
+            audio.spellFireSound.src = 'audio/spell-fire.wav';
+            
+            audio.backgroundMusic.loop = true;
+            audio.bossMusic.loop = true;
+            audio.backgroundMusic.volume = 0.5;
+            audio.bossMusic.volume = 0.6;
+            audio.shootSound.volume = 0.3;
+            audio.explosionSound.volume = 0.4;
+            audio.coinSound.volume = 0.4;
+            audio.bombSound.volume = 0.6;
+            audio.powerupSound.volume = 0.5;
+            audio.hitSound.volume = 0.4;
+            audio.gameOverSound.volume = 0.5;
+            audio.bossWarningSound.volume = 0.6;
+            audio.spellChargeSound.volume = 0.4;
+            audio.spellFireSound.volume = 0.6;
+        }
+        
+        // Enable audio playback after a user gesture (click or keypress)
+        function enableAudioOnInteraction() {
+            function tryPlay() {
+                try {
+                    if (audio.backgroundMusic && audio.backgroundMusic.src) {
+                        audio.backgroundMusic.play().catch(() => {});
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                document.removeEventListener('click', tryPlay);
+                document.removeEventListener('keydown', tryPlay);
+            }
+            document.addEventListener('click', tryPlay);
+            document.addEventListener('keydown', tryPlay);
+        }
+        
+        // Play sound with error handling
+        function playSound(soundName) {
+            try {
+                const sound = audio[soundName];
+                if (sound && sound.src) {
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Audio play failed:", e));
+                }
+            } catch (e) {
+                console.log("Sound error:", e);
+            }
+        }
+        
+        // Update loading progress
+        function updateLoadingProgress() {
+            const progress = Math.floor((imagesLoaded / totalImages) * 100);
+            const progressElement = document.getElementById('loadingProgress');
+            if (progressElement) {
+                progressElement.textContent = `${progress}%`;
+            }
+            
+            if (imagesLoaded === totalImages) {
+                setTimeout(() => {
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) {
+                        loadingScreen.classList.add('hidden');
+                    }
+                    showTitleScreen();
+                    initTooltips();
+                }, 500);
+            }
+        }
+        
+        // Load all game assets
+        function loadAssets() {
+            loadAudio();
+            
+            // Load game objects (with placeholders)
+            handleImageLoad('player1', 'img/player1.png', '#66ffcc', 'M', 32, 32, true);
+            handleImageLoad('player2', 'img/player2.png', '#ff66cc', 'D', 32, 32, true);
+            handleImageLoad('player3', 'img/player3.png', '#9966ff', 'S', 32, 32, true);
+            handleImageLoad('playerBullet', 'img/playerBullet.png', '#ffff66', '', 12, 20, true);
+            handleImageLoad('playerBullet2', 'img/playerBullet2.png', '#ff66ff', '', 10, 24, true);
+            handleImageLoad('enemyBullet', 'img/enemyBullet.png', '#ff9966', '', 12, 12, true);
+            handleImageLoad('enemy1', 'img/enemy.png', '#6699ff', 'E1', 40, 40, true);
+            handleImageLoad('enemy2', 'img/enemy2.png', '#9966ff', 'E2', 48, 48, true);
+            handleImageLoad('boss', 'img/boss.png', '#ff0000', 'BOSS', 80, 80, true);
+            handleImageLoad('background', 'img/background.png', '#0a0a2a', 'BG', 480, 640, true);
+            handleImageLoad('coin', 'img/coin.png', '#ffcc66', '🪙', 16, 16, true);
+            handleImageLoad('powerup', 'img/powerup.png', '#66ffcc', 'PWR', 20, 20, true);
+            handleImageLoad('bombEffect', 'img/bombEffect.png', '#ffff00', '💥', 100, 100, true);
+            handleImageLoad('bossGameOver', 'img/boss-game-over.jpg', '#990000', 'BOSS GAME OVER', 480, 640, true);
+            
+            // Load UI images (with placeholder support)
+            handleImageLoad('title', 'img/title.png', '#ff66cc', 'ZESTY FRUITY', 400, 150);
+            handleImageLoad('startBtn', 'img/startBtn.png', '#66ff66', 'START', 200, 60);
+            handleImageLoad('storeBtn', 'img/storeBtn.png', '#ffcc66', 'STORE', 150, 50);
+            handleImageLoad('difficultyBtn', 'img/difficultyBtn.png', '#66ccff', 'DIFFICULTY', 150, 50);
+            handleImageLoad('characterBtn', 'img/characterBtn.png', '#ff66cc', 'CHARACTERS', 150, 50);
+            handleImageLoad('spellCardBtn', 'img/spellcard-btn.png', '#9966ff', 'SPELLS', 150, 50);
+            handleImageLoad('continueBtn', 'img/continueBtn.png', '#66ccff', 'CONTINUE', 200, 60);
+            handleImageLoad('gameOver', 'img/gameOver.png', '#ff6666', 'GAME OVER', 300, 100);
+            handleImageLoad('retry', 'img/retry.png', '#66ff66', 'RETRY', 150, 50);
+            handleImageLoad('giveUp', 'img/giveUp.png', '#ff9966', 'GIVE UP', 150, 50);
+            handleImageLoad('backBtn', 'img/backBtn.png', '#cccccc', 'BACK', 150, 50);
+            handleImageLoad('bombIcon', 'img/bombIcon.png', '#ff6666', '💣', 32, 32);
+            handleImageLoad('lifeIcon', 'img/lifeIcon.png', '#66ff66', '❤️', 32, 32);
+            handleImageLoad('shieldIcon', 'img/shieldIcon.png', '#6699ff', '🛡️', 32, 32);
+        }
+        
+        // Update UI elements
+        function updateUI() {
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const highScoreDisplay = document.getElementById('highScoreDisplay');
+            const livesDisplay = document.getElementById('livesDisplay');
+            const bombsDisplay = document.getElementById('bombsDisplay');
+            const coinsDisplay = document.getElementById('coinsDisplay');
+            const characterDisplay = document.getElementById('characterDisplay');
+            const spellDisplay = document.getElementById('spellDisplay');
+            const coinCountStore = document.getElementById('coinCountStore');
+            const coinHUD = document.getElementById('coinHUD');
+            
+            if (scoreDisplay) scoreDisplay.textContent = score;
+            if (highScoreDisplay) highScoreDisplay.textContent = highScore;
+            if (livesDisplay) livesDisplay.textContent = lives;
+            if (bombsDisplay) bombsDisplay.textContent = bombs;
+            if (coinsDisplay) coinsDisplay.textContent = coins;
+            
+            // Update character name
+            const charNames = ['', 'Mangric', 'Dratt', 'Spectral'];
+            if (characterDisplay) characterDisplay.textContent = charNames[selectedCharacter] || 'Mangric';
+            
+            // Update spell card name
+            const spellNames = ['None', 'Shadow Spiral', 'Prism Lance', 'Ghost Fang'];
+            if (spellDisplay) spellDisplay.textContent = spellNames[selectedSpellCard] || 'None';
+            
+            if (coinCountStore) coinCountStore.textContent = `Coins: ${coins}`;
+            if (coinHUD) coinHUD.textContent = `🪙 ${coins}`;
+            
+            // NEW: Update side score
+            updateSideScore();
+            
+            const buyLife = document.getElementById('buyLife');
+            const buyBomb = document.getElementById('buyBomb');
+            const buyShield = document.getElementById('buyShield');
+            const buyPower = document.getElementById('buyPower');
+            
+            if (buyLife) {
+                buyLife.disabled = coins < storeItems.extraLife.price || storeItems.extraLife.owned >= storeItems.extraLife.max;
+                buyLife.textContent = `${storeItems.extraLife.price} Coins (${storeItems.extraLife.owned}/${storeItems.extraLife.max})`;
+            }
+            if (buyBomb) {
+                buyBomb.disabled = coins < storeItems.extraBomb.price || storeItems.extraBomb.owned >= storeItems.extraBomb.max;
+                buyBomb.textContent = `${storeItems.extraBomb.price} Coins (${storeItems.extraBomb.owned}/${storeItems.extraBomb.max})`;
+            }
+            if (buyShield) {
+                buyShield.disabled = coins < storeItems.shield.price || storeItems.shield.owned >= storeItems.shield.max;
+                buyShield.textContent = `${storeItems.shield.price} Coins (${storeItems.shield.owned}/${storeItems.shield.max})`;
+            }
+            if (buyPower) {
+                buyPower.disabled = coins < storeItems.powerUp.price || storeItems.powerUp.owned >= storeItems.powerUp.max;
+                buyPower.textContent = `${storeItems.powerUp.price} Coins (${storeItems.powerUp.owned}/${storeItems.powerUp.max})`;
+            }
+            
+            document.querySelectorAll('.difficulty-option').forEach(option => {
+                option.classList.remove('selected');
+                if (parseInt(option.dataset.level) === selectedDifficulty) {
+                    option.classList.add('selected');
+                }
+            });
+            
+            // Check for player2 unlock
+            checkPlayer2Unlock();
+            
+            // Update spell card selection
+            updateSpellCardSelection();
+        }
+        
+        // Show title screen
+        function showTitleScreen() {
+            gameState = 'title';
+            const titleScreen = document.getElementById('titleScreen');
+            const hud = document.getElementById('hud');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const storeScreen = document.getElementById('storeScreen');
+            const difficultyScreen = document.getElementById('difficultyScreen');
+            const characterScreen = document.getElementById('characterScreen');
+            const spellCardScreen = document.getElementById('spellCardScreen');
+            const bombButton = document.getElementById('bombButton');
+            const coinHUD = document.getElementById('coinHUD');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (titleScreen) titleScreen.classList.remove('hidden');
+            if (hud) hud.classList.add('hidden');
+            if (gameOverScreen) gameOverScreen.classList.add('hidden');
+            if (storeScreen) storeScreen.classList.add('hidden');
+            if (difficultyScreen) difficultyScreen.classList.add('hidden');
+            if (characterScreen) characterScreen.classList.add('hidden');
+            if (spellCardScreen) spellCardScreen.classList.add('hidden');
+            if (bombButton) bombButton.classList.add('hidden');
+            if (coinHUD) coinHUD.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            playSound('backgroundMusic');
+            
+            const continueButton = document.getElementById('continueButton');
+            if (continueButton) {
+                if (continues > 0 && score > 0) {
+                    continueButton.classList.remove('hidden');
+                    const placeholder = document.getElementById('continueBtnPlaceholder');
+                    if (placeholder) placeholder.classList.add('hidden');
+                } else {
+                    continueButton.classList.add('hidden');
+                    const placeholder = document.getElementById('continueBtnPlaceholder');
+                    if (placeholder) placeholder.classList.add('hidden');
+                }
+            }
+            
+            updateUI();
+        }
+        
+        // Show store screen
+        function showStoreScreen() {
+            gameState = 'store';
+            const storeScreen = document.getElementById('storeScreen');
+            const titleScreen = document.getElementById('titleScreen');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (storeScreen) storeScreen.classList.remove('hidden');
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            updateUI();
+        }
+        
+        // Show difficulty screen
+        function showDifficultyScreen() {
+            gameState = 'difficulty';
+            const difficultyScreen = document.getElementById('difficultyScreen');
+            const titleScreen = document.getElementById('titleScreen');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (difficultyScreen) difficultyScreen.classList.remove('hidden');
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            updateUI();
+        }
+        
+        // Show character screen
+        function showCharacterScreen() {
+            gameState = 'character';
+            const characterScreen = document.getElementById('characterScreen');
+            const titleScreen = document.getElementById('titleScreen');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (characterScreen) characterScreen.classList.remove('hidden');
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            updateCharacterSelection();
+        }
+        
+        // NEW: Show spell card screen
+        function showSpellCardScreen() {
+            gameState = 'spellcard';
+            const spellCardScreen = document.getElementById('spellCardScreen');
+            const titleScreen = document.getElementById('titleScreen');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (spellCardScreen) spellCardScreen.classList.remove('hidden');
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            updateSpellCardSelection();
+        }
+        
+        // Show game over screen
+        function showGameOverScreen() {
+            gameState = 'gameOver';
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const hud = document.getElementById('hud');
+            const titleScreen = document.getElementById('titleScreen');
+            const bombButton = document.getElementById('bombButton');
+            const coinHUD = document.getElementById('coinHUD');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (gameOverScreen) gameOverScreen.classList.remove('hidden');
+            if (hud) hud.classList.add('hidden');
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (bombButton) bombButton.classList.add('hidden');
+            if (coinHUD) coinHUD.classList.add('hidden');
+            if (sideScore) sideScore.classList.add('hidden');
+            
+            const finalScore = document.getElementById('finalScore');
+            const coinsEarned = document.getElementById('coinsEarned');
+            if (finalScore) finalScore.textContent = `Score: ${score}`;
+            if (coinsEarned) coinsEarned.textContent = `Coins Earned: ${Math.floor(score / 100)}`;
+            
+            // Play game over sound
+            playSound('gameOverSound');
+        }
+        
+        // Start a new game
+        function startGame(isContinue = false) {
+            if (!isContinue) {
+                score = 0;
+                lives = INITIAL_LIVES + storeItems.extraLife.owned;
+                bombs = INITIAL_BOMBS + storeItems.extraBomb.owned;
+                powerLevel = 1 + storeItems.powerUp.owned;
+                playerHasShield = storeItems.shield.owned > 0;
+                shieldHits = playerHasShield ? 3 : 0;
+                continues = INITIAL_CONTINUES;
+                difficulty = selectedDifficulty;
+                isChargingSpell = false;
+                spellCharge = 0;
+            }
+            
+            // Create player based on selected character
+            player = new Player(selectedCharacter);
+            enemies = [];
+            playerBullets = [];
+            enemyBullets = [];
+            particles = [];
+            coinsOnScreen = [];
+            powerUps = [];
+            spellBullets = []; // NEW: Clear spell bullets
+            frameCount = 0;
+            backgroundY = 0;
+            
+            const bombButton = document.getElementById('bombButton');
+            const coinHUD = document.getElementById('coinHUD');
+            const sideScore = document.getElementById('sideScore');
+            
+            if (bombButton) bombButton.classList.remove('hidden');
+            if (coinHUD) coinHUD.classList.remove('hidden');
+            if (sideScore) sideScore.classList.remove('hidden');
+            
+            updateUI();
+            
+            const titleScreen = document.getElementById('titleScreen');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const storeScreen = document.getElementById('storeScreen');
+            const difficultyScreen = document.getElementById('difficultyScreen');
+            const characterScreen = document.getElementById('characterScreen');
+            const spellCardScreen = document.getElementById('spellCardScreen');
+            const hud = document.getElementById('hud');
+            
+            if (titleScreen) titleScreen.classList.add('hidden');
+            if (gameOverScreen) gameOverScreen.classList.add('hidden');
+            if (storeScreen) storeScreen.classList.add('hidden');
+            if (difficultyScreen) difficultyScreen.classList.add('hidden');
+            if (characterScreen) characterScreen.classList.add('hidden');
+            if (spellCardScreen) spellCardScreen.classList.add('hidden');
+            if (hud) hud.classList.remove('hidden');
+            
+            gameState = 'playing';
+            
+            // Start background music
+            audio.backgroundMusic.currentTime = 0;
+            playSound('backgroundMusic');
+        }
+        
+        // NEW: Spell Bullet Class
+        class SpellBullet {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type; // 1 = Shadow Spiral, 2 = Prism Lance, 3 = Ghost Fang
+                this.vx = 0;
+                this.vy = -SPELL_BULLET_SPEEDS[type];
+                this.homingSpeed = SPELL_HOMING_SPEEDS[type];
+                this.width = 8;
+                this.height = 8;
+                this.hitRadius = 4;
+                this.damage = type === 3 ? 3 : (type === 1 ? 2 : 1); // Ghost Fang highest damage
+                this.life = type === 3 ? 90 : 180; // Ghost Fang shorter lifespan (1.5s)
+                this.maxLife = this.life;
+                this.pierce = type === 2 ? 2 : 0; // Prism Lance can pierce
+                this.pierceCount = 0;
+                this.orbitAngle = 0;
+                this.orbitRadius = 0;
+                this.targetEnemy = null;
+                
+                // Set visual properties based on type
+                switch(type) {
+                    case 1: // Shadow Spiral
+                        this.color = '#333333';
+                        this.glowColor = '#ff66cc';
+                        break;
+                    case 2: // Prism Lance
+                        this.color = '#ff00ff';
+                        this.glowColor = '#00ffff';
+                        this.width = 6;
+                        this.height = 20;
+                        break;
+                    case 3: // Ghost Fang
+                        this.color = '#00ff00';
+                        this.glowColor = '#0000ff';
+                        this.width = 12;
+                        this.height = 12;
+                        break;
+                }
+            }
+            
+            update() {
+                this.life--;
+                if (this.life <= 0) return false;
+                
+                // Homing behavior
+                if (enemies.length > 0) {
+                    if (!this.targetEnemy || this.targetEnemy.health <= 0) {
+                        // Find new target
+                        let closestDist = Infinity;
+                        for (const enemy of enemies) {
+                            const dx = enemy.x - this.x;
+                            const dy = enemy.y - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < closestDist) {
+                                closestDist = dist;
+                                this.targetEnemy = enemy;
+                            }
+                        }
+                    }
+                    
+                    if (this.targetEnemy && this.targetEnemy.health > 0) {
+                        const dx = this.targetEnemy.x - this.x;
+                        const dy = this.targetEnemy.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 0) {
+                            // Apply homing
+                            const targetAngle = Math.atan2(dy, dx);
+                            const currentAngle = Math.atan2(this.vy, this.vx);
+                            let angleDiff = targetAngle - currentAngle;
+                            
+                            // Normalize angle difference
+                            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                            
+                            // Limit turning rate
+                            const maxTurn = this.homingSpeed * 0.01;
+                            angleDiff = Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
+                            
+                            const newAngle = currentAngle + angleDiff;
+                            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                            this.vx = Math.cos(newAngle) * speed;
+                            this.vy = Math.sin(newAngle) * speed;
+                            
+                            // Special behavior for Shadow Spiral
+                            if (this.type === 1) {
+                                this.orbitAngle += 0.1;
+                                this.orbitRadius = 20 + Math.sin(frameCount * 0.05) * 5;
+                            }
+                        }
+                    }
+                }
+                
+                // Apply movement
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Add orbit effect for Shadow Spiral
+                if (this.type === 1 && this.targetEnemy && this.targetEnemy.health > 0) {
+                    this.x = this.targetEnemy.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+                    this.y = this.targetEnemy.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+                }
+                
+                // Check bounds
+                return this.y > -50 && this.y < CANVAS_HEIGHT + 50 && 
+                       this.x > -50 && this.x < CANVAS_WIDTH + 50;
+            }
+            
+            draw() {
+                const alpha = this.life / this.maxLife;
+                
+                switch(this.type) {
+                    case 1: // Shadow Spiral
+                        ctx.save();
+                        ctx.globalAlpha = alpha;
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Glow effect
+                        ctx.strokeStyle = this.glowColor;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width/2 + 2, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
+                        break;
+                        
+                    case 2: // Prism Lance
+                        ctx.save();
+                        ctx.globalAlpha = alpha;
+                        const gradient = ctx.createLinearGradient(
+                            this.x, this.y - this.height/2,
+                            this.x, this.y + this.height/2
+                        );
+                        gradient.addColorStop(0, '#ff00ff');
+                        gradient.addColorStop(0.5, '#ffff00');
+                        gradient.addColorStop(1, '#00ffff');
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                        
+                        // Piercing effect
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                        ctx.restore();
+                        break;
+                        
+                    case 3: // Ghost Fang
+                        ctx.save();
+                        ctx.globalAlpha = alpha;
+                        
+                        // Draw spike shape
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y - this.height/2);
+                        ctx.lineTo(this.x + this.width/2, this.y + this.height/2);
+                        ctx.lineTo(this.x - this.width/2, this.y + this.height/2);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Glow trail
+                        ctx.strokeStyle = this.glowColor;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y - this.height/2);
+                        ctx.lineTo(this.x, this.y + this.height/2);
+                        ctx.stroke();
+                        ctx.restore();
+                        break;
+                }
+            }
+            
+            checkCollision(enemy) {
+                const dx = this.x - enemy.x;
+                const dy = this.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.hitRadius + enemy.hitRadius) {
+                    if (this.type === 2 && this.pierceCount < this.pierce) {
+                        // Prism Lance pierces
+                        this.pierceCount++;
+                        return false; // Don't destroy bullet yet
+                    }
+                    return true; // Destroy bullet
+                }
+                return false;
+            }
+        }
+        
+        // NEW: Fire spell card
+        function fireSpellCard() {
+            if (selectedSpellCard === 0 || !player) return;
+            
+            playSound('spellFireSound');
+            
+            const count = powerLevel; // More bullets at higher power levels
+            
+            for (let i = 0; i < count; i++) {
+                const offset = (i - (count - 1) / 2) * 10;
+                spellBullets.push(new SpellBullet(
+                    player.x + offset,
+                    player.y - 20,
+                    selectedSpellCard
+                ));
+            }
+            
+            // Reset charge
+            isChargingSpell = false;
+            spellCharge = 0;
+        }
+        
+        // Enemy base class - UPDATED WITH NEW SHOOTING PATTERNS
+        class Enemy {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.width = type === 1 ? 36 : 44;
+                this.height = type === 1 ? 36 : 44;
+                this.health = type === 1 ? 6 : 12;
+                this.maxHealth = this.health;
+                this.speed = type === 1 ? 0.8 : 0.6;
+                this.shootCooldown = Math.floor(Math.random() * 40);
+                this.shootDelay = type === 1 ? ENEMY1_BASE_SHOOT_DELAY : ENEMY2_BASE_SHOOT_DELAY;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = this.speed;
+                this.hitRadius = type === 1 ? 14 : 17;
+                this.patternCounter = 0;
+                this.isBoss = false;
+                this.attackCount = 0; // Track number of attacks
+                
+                // Adjust for difficulty (less aggressive scaling)
+                this.health = Math.floor(this.health * (1 + (difficulty - 1) * 0.3));
+                this.shootDelay = Math.max(80, this.shootDelay / (1 + (difficulty - 1) * 0.3));
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x < this.width/2 || this.x > CANVAS_WIDTH - this.width/2) {
+                    this.vx *= -1;
+                }
+                
+                if (this.y > CANVAS_HEIGHT + 60) return false;
+                
+                if (this.shootCooldown > 0) {
+                    this.shootCooldown--;
+                } else {
+                    this.shoot();
+                    this.shootCooldown = this.shootDelay;
+                    this.attackCount++;
+                }
+                
+                return true;
+            }
+            
+            shoot() {
+                const baseSpeed = 2.2 * (1 + (difficulty - 1) * 0.2); // Less aggressive scaling
+                
+                // Determine pattern based on attack count
+                const patternIndex = Math.floor(this.attackCount / PATTERN_CHANGE_AFTER_ATTACKS) % 4;
+                
+                if (this.type === 1) {
+                    // Type 1 enemies have 4 distinct patterns
+                    switch(patternIndex) {
+                        case 0: // Aimed shot at player
+                            if (player) {
+                                const dx = player.x - this.x;
+                                const dy = player.y - this.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                if (dist > 0) {
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        (dx/dist) * baseSpeed * 0.8,
+                                        (dy/dist) * baseSpeed * 0.8
+                                    ));
+                                }
+                            }
+                            break;
+                            
+                        case 1: // 3-shot spread
+                            for (let i = -1; i <= 1; i++) {
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    i * 0.4 * baseSpeed,
+                                    baseSpeed * 0.9
+                                ));
+                            }
+                            break;
+                            
+                        case 2: // 5-shot horizontal spread
+                            for (let i = -2; i <= 2; i++) {
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x + i * 8, this.y,
+                                    0,
+                                    baseSpeed * 0.8
+                                ));
+                            }
+                            break;
+                            
+                        case 3: // 3-shot curved pattern
+                            for (let i = 0; i < 3; i++) {
+                                const angle = (i - 1) * 0.3;
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    Math.sin(angle) * baseSpeed * 0.7,
+                                    Math.cos(angle) * baseSpeed,
+                                    'curved'
+                                ));
+                            }
+                            break;
+                    }
+                } else {
+                    // Type 2 enemies have more complex patterns
+                    switch(patternIndex) {
+                        case 0: // 4-directional shot
+                            for (let i = 0; i < 4; i++) {
+                                const angle = (i * Math.PI * 2) / 4;
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    Math.cos(angle) * baseSpeed * 0.7,
+                                    Math.sin(angle) * baseSpeed * 0.7
+                                ));
+                            }
+                            break;
+                            
+                        case 1: // 8-directional shot (every other)
+                            for (let i = 0; i < 8; i += 2) {
+                                const angle = (i * Math.PI * 2) / 8;
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    Math.cos(angle) * baseSpeed * 0.6,
+                                    Math.sin(angle) * baseSpeed * 0.6,
+                                    'spiral'
+                                ));
+                            }
+                            break;
+                            
+                        case 2: // Dual spiral pattern
+                            for (let i = 0; i < 2; i++) {
+                                const angle1 = (i * Math.PI) + (frameCount * 0.03);
+                                const angle2 = angle1 + Math.PI * 0.5;
+                                
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    Math.cos(angle1) * baseSpeed * 0.5,
+                                    Math.sin(angle1) * baseSpeed * 0.5,
+                                    'spiral'
+                                ));
+                                
+                                enemyBullets.push(new EnemyBullet(
+                                    this.x, this.y,
+                                    Math.cos(angle2) * baseSpeed * 0.5,
+                                    Math.sin(angle2) * baseSpeed * 0.5,
+                                    'spiral'
+                                ));
+                            }
+                            break;
+                            
+                        case 3: // Targeted fan spread
+                            if (player) {
+                                const dx = player.x - this.x;
+                                const dy = player.y - this.y;
+                                const baseAngle = Math.atan2(dy, dx);
+                                
+                                for (let i = -1; i <= 1; i++) {
+                                    const angle = baseAngle + (i * 0.2);
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle) * baseSpeed * 0.9,
+                                        Math.sin(angle) * baseSpeed * 0.9,
+                                        'curved'
+                                    ));
+                                }
+                            }
+                            break;
+                    }
+                }
+            }
+            
+            draw() {
+                const img = this.type === 1 ? images.enemy1 : images.enemy2;
+                
+                if (img) {
+                    const bob = Math.sin(frameCount * 0.05) * 1;
+                    ctx.drawImage(img, 
+                        this.x - this.width/2, 
+                        this.y - this.height/2 + bob, 
+                        this.width, 
+                        this.height
+                    );
+                } else {
+                    // Draw placeholder
+                    ctx.fillStyle = this.type === 1 ? '#6699ff' : '#9966ff';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Health bar
+                const barWidth = 36;
+                const barHeight = 3;
+                const healthPercent = this.health / this.maxHealth;
+                
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 8, barWidth, barHeight);
+                ctx.fillStyle = healthPercent > 0.6 ? '#66ff66' : (healthPercent > 0.3 ? '#ffff66' : '#ff6666');
+                ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 8, barWidth * healthPercent, barHeight);
+            }
+            
+            checkCollision(bullet) {
+                const dx = this.x - bullet.x;
+                const dy = this.y - bullet.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.hitRadius + bullet.hitRadius) {
+                    this.health -= bullet.damage;
+                    
+                    particles.push({
+                        x: bullet.x,
+                        y: bullet.y,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: (Math.random() - 0.5) * 3,
+                        life: 15,
+                        maxLife: 15,
+                        color: '#ffff66',
+                        size: 3
+                    });
+                    
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        // Boss class - UPDATED WITH IMPROVED PATTERNS
+        class Boss extends Enemy {
+            constructor() {
+                super(CANVAS_WIDTH / 2, -80, 2);
+                this.isBoss = true;
+                this.health = 50 + (difficulty * 10); // Adjusted for better scaling
+                this.maxHealth = this.health;
+                this.width = 70;
+                this.height = 70;
+                this.hitRadius = 28;
+                this.shootDelay = 100 / (1 + (difficulty - 1) * 0.4); // Less aggressive scaling
+                this.bossPatternCounter = 0;
+                this.phase = 1;
+                this.bossAttackCount = 0;
+            }
+            
+            update() {
+                // Move into position
+                if (this.y < 120) {
+                    this.y += 1;
+                    return true;
+                }
+                
+                // Horizontal movement
+                this.x += this.vx;
+                if (this.x < this.width/2 || this.x > CANVAS_WIDTH - this.width/2) {
+                    this.vx *= -1;
+                }
+                
+                // Phase changes
+                if (this.health <= this.maxHealth * 0.6 && this.phase === 1) {
+                    this.phase = 2;
+                    this.shootDelay = 60 / (1 + (difficulty - 1) * 0.4);
+                    this.vx *= 1.3;
+                }
+                
+                if (this.health <= this.maxHealth * 0.3 && this.phase === 2) {
+                    this.phase = 3;
+                    this.shootDelay = 40 / (1 + (difficulty - 1) * 0.4);
+                    this.vx *= 1.2;
+                }
+                
+                // Shooting
+                if (this.shootCooldown > 0) {
+                    this.shootCooldown--;
+                } else {
+                    this.bossShoot();
+                    this.shootCooldown = this.shootDelay;
+                    this.bossAttackCount++;
+                }
+                
+                return this.health > 0;
+            }
+            
+            bossShoot() {
+                const baseSpeed = 2.2 * (1 + (difficulty - 1) * 0.2);
+                const patternIndex = Math.floor(this.bossAttackCount / 2) % 3; // Change pattern every 2 attacks
+                
+                switch(this.phase) {
+                    case 1:
+                        switch(patternIndex) {
+                            case 0:
+                                // Circular pattern
+                                for (let i = 0; i < 8; i++) {
+                                    const angle = (i * Math.PI * 2) / 8 + (this.bossPatternCounter * 0.04);
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle) * baseSpeed,
+                                        Math.sin(angle) * baseSpeed,
+                                        'spiral'
+                                    ));
+                                }
+                                break;
+                            case 1:
+                                // 4-directional with slight spread
+                                for (let i = 0; i < 4; i++) {
+                                    const angle = (i * Math.PI * 2) / 4;
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle) * baseSpeed * 0.8,
+                                        Math.sin(angle) * baseSpeed * 0.8
+                                    ));
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle + 0.1) * baseSpeed * 0.8,
+                                        Math.sin(angle + 0.1) * baseSpeed * 0.8
+                                    ));
+                                }
+                                break;
+                            case 2:
+                                // Simple targeted pattern
+                                if (player) {
+                                    const dx = player.x - this.x;
+                                    const dy = player.y - this.y;
+                                    const baseAngle = Math.atan2(dy, dx);
+                                    
+                                    for (let i = -1; i <= 1; i++) {
+                                        const angle = baseAngle + (i * 0.15);
+                                        enemyBullets.push(new EnemyBullet(
+                                            this.x, this.y,
+                                            Math.cos(angle) * baseSpeed * 1.1,
+                                            Math.sin(angle) * baseSpeed * 1.1,
+                                            'curved'
+                                        ));
+                                    }
+                                }
+                                break;
+                        }
+                        break;
+                        
+                    case 2:
+                        switch(patternIndex) {
+                            case 0:
+                                // 12-directional spiral
+                                for (let i = 0; i < 12; i++) {
+                                    const angle = (i * Math.PI * 2) / 12 + (this.bossPatternCounter * 0.05);
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle) * baseSpeed * 1.2,
+                                        Math.sin(angle) * baseSpeed * 1.2,
+                                        'spiral'
+                                    ));
+                                }
+                                break;
+                            case 1:
+                                // Targeted spread with more bullets
+                                if (player) {
+                                    const dx = player.x - this.x;
+                                    const dy = player.y - this.y;
+                                    const baseAngle = Math.atan2(dy, dx);
+                                    
+                                    for (let i = -2; i <= 2; i++) {
+                                        const angle = baseAngle + (i * 0.1);
+                                        enemyBullets.push(new EnemyBullet(
+                                            this.x, this.y,
+                                            Math.cos(angle) * baseSpeed * 1.3,
+                                            Math.sin(angle) * baseSpeed * 1.3,
+                                            'curved'
+                                        ));
+                                    }
+                                }
+                                break;
+                            case 2:
+                                // Dual rotating spirals
+                                for (let i = 0; i < 2; i++) {
+                                    const baseAngle = (i * Math.PI) + (this.bossPatternCounter * 0.06);
+                                    for (let j = 0; j < 3; j++) {
+                                        const angle = baseAngle + (j * Math.PI * 2 / 3);
+                                        enemyBullets.push(new EnemyBullet(
+                                            this.x, this.y,
+                                            Math.cos(angle) * baseSpeed * 1.1,
+                                            Math.sin(angle) * baseSpeed * 1.1,
+                                            'spiral'
+                                        ));
+                                    }
+                                }
+                                break;
+                        }
+                        break;
+                        
+                    case 3:
+                        switch(patternIndex) {
+                            case 0:
+                                // Intense 16-directional pattern
+                                for (let i = 0; i < 16; i++) {
+                                    const angle1 = (i * Math.PI * 2) / 16 + (this.bossPatternCounter * 0.07);
+                                    const angle2 = angle1 + Math.PI / 16;
+                                    
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle1) * baseSpeed * 1.4,
+                                        Math.sin(angle1) * baseSpeed * 1.4,
+                                        'spiral'
+                                    ));
+                                    
+                                    enemyBullets.push(new EnemyBullet(
+                                        this.x, this.y,
+                                        Math.cos(angle2) * baseSpeed * 1.4,
+                                        Math.sin(angle2) * baseSpeed * 1.4,
+                                        'spiral'
+                                    ));
+                                }
+                                break;
+                            case 1:
+                                // Concentric circles
+                                for (let i = 0; i < 2; i++) {
+                                    const radius = 20 + i * 15;
+                                    for (let j = 0; j < 8; j++) {
+                                        const angle = (j * Math.PI * 2) / 8 + (this.bossPatternCounter * 0.03);
+                                        enemyBullets.push(new EnemyBullet(
+                                            this.x + Math.cos(angle) * radius,
+                                            this.y + Math.sin(angle) * radius,
+                                            Math.cos(angle) * baseSpeed * 1.2,
+                                            Math.sin(angle) * baseSpeed * 1.2,
+                                            'spiral'
+                                        ));
+                                    }
+                                }
+                                break;
+                            case 2:
+                                // Final desperation pattern - targeted barrage
+                                if (player) {
+                                    const dx = player.x - this.x;
+                                    const dy = player.y - this.y;
+                                    const baseAngle = Math.atan2(dy, dx);
+                                    
+                                    for (let i = -3; i <= 3; i++) {
+                                        for (let j = 0; j < 2; j++) {
+                                            const angle = baseAngle + (i * 0.1) + (j * 0.05);
+                                            enemyBullets.push(new EnemyBullet(
+                                                this.x, this.y,
+                                                Math.cos(angle) * baseSpeed * 1.5,
+                                                Math.sin(angle) * baseSpeed * 1.5,
+                                                'curved'
+                                            ));
+                                        }
+                                    }
+                                }
+                                break;
+                        }
+                        break;
+                }
+                
+                this.bossPatternCounter++;
+            }
+            
+            draw() {
+                const img = images.boss;
+                
+                if (img) {
+                    const pulse = 1 + Math.sin(frameCount * 0.1) * 0.1;
+                    const bob = Math.sin(frameCount * 0.03) * 3;
+                    ctx.drawImage(img, 
+                        this.x - this.width/2, 
+                        this.y - this.height/2 + bob, 
+                        this.width * pulse, 
+                        this.height * pulse
+                    );
+                } else {
+                    // Draw placeholder
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('BOSS', this.x, this.y);
+                }
+                
+                // Health bar
+                const barWidth = 120;
+                const barHeight = 8;
+                const healthPercent = this.health / this.maxHealth;
+                
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 15, barWidth, barHeight);
+                ctx.fillStyle = healthPercent > 0.6 ? '#66ff66' : (healthPercent > 0.3 ? '#ffff66' : '#ff6666');
+                ctx.fillRect(this.x - barWidth/2, this.y - this.height/2 - 15, barWidth * healthPercent, barHeight);
+                
+                // Phase indicator
+                ctx.fillStyle = '#ff66cc';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`PHASE ${this.phase}`, this.x, this.y - this.height/2 - 30);
+            }
+        }
+        
+        // Player class - UPDATED WITH NEW CHARACTER NAMES AND SPELL KEY CHANGE
+        class Player {
+            constructor(characterType = 1) {
+                this.x = CANVAS_WIDTH / 2;
+                this.y = CANVAS_HEIGHT - 80;
+                this.width = 32;
+                this.height = 32;
+                this.speed = PLAYER_SPEED;
+                this.shootCooldown = 0;
+                this.shootDelay = 3;
+                this.characterType = characterType; // 1 = Mangric, 2 = Dratt, 3 = Spectral
+                this.invincible = 0;
+                this.moveX = 0;
+                this.moveY = 0;
+            }
+            
+            update() {
+                this.moveX = 0;
+                this.moveY = 0;
+
+                // Use virtual joystick axis when available (touch)
+                if (Math.abs(joystickAxis.x) > 0.05 || Math.abs(joystickAxis.y) > 0.05) {
+                    this.moveX = joystickAxis.x;
+                    this.moveY = joystickAxis.y;
+                } else {
+                    // Movement input (keyboard)
+                    if (keys['ArrowLeft'] || keys['a'] || keys['A']) this.moveX -= 1;
+                    if (keys['ArrowRight'] || keys['d'] || keys['D']) this.moveX += 1;
+                    if (keys['ArrowUp'] || keys['w'] || keys['W']) this.moveY -= 1;
+                    if (keys['ArrowDown'] || keys['s'] || keys['S']) this.moveY += 1;
+                }
+
+                // Normalize diagonal movement (generalized)
+                if (this.moveX !== 0 || this.moveY !== 0) {
+                    const len = Math.sqrt(this.moveX * this.moveX + this.moveY * this.moveY);
+                    if (len > 1) { this.moveX /= len; this.moveY /= len; }
+                }
+
+                // Apply movement
+                this.x += this.moveX * this.speed;
+                this.y += this.moveY * this.speed;
+                
+                // Keep within bounds
+                this.x = Math.max(this.width/2, Math.min(CANVAS_WIDTH - this.width/2, this.x));
+                this.y = Math.max(this.height/2, Math.min(CANVAS_HEIGHT - this.height/2, this.y));
+                
+                // Shooting
+                if (keys[' '] || keys['Spacebar']) {
+                    if (this.shootCooldown <= 0) {
+                        this.shoot();
+                        this.shootCooldown = this.shootDelay;
+                    }
+                }
+                
+                if (this.shootCooldown > 0) {
+                    this.shootCooldown--;
+                }
+                
+                // UPDATED: Spell card charging - changed from S to E
+                if ((keys['e'] || keys['E']) && selectedSpellCard > 0 && spellCardsUnlocked[selectedSpellCard]) {
+                    if (!isChargingSpell) {
+                        isChargingSpell = true;
+                        playSound('spellChargeSound');
+                    }
+                    spellCharge = Math.min(spellCharge + 1, SPELL_CHARGE_TIME);
+                    
+                    if (spellCharge >= SPELL_CHARGE_TIME) {
+                        fireSpellCard();
+                    }
+                } else if (isChargingSpell) {
+                    isChargingSpell = false;
+                    spellCharge = 0;
+                }
+                
+                if (this.invincible > 0) {
+                    this.invincible--;
+                }
+                
+                // Check bomb key
+                if ((keys['b'] || keys['B']) && bombs > 0) {
+                    useBomb();
+                    keys['b'] = false;
+                    keys['B'] = false;
+                }
+            }
+            
+            shoot() {
+                playSound('shootSound');
+                
+                const bulletCount = 2 + Math.floor(powerLevel / 2);
+                
+                // Main forward shots - UPDATED SPEED
+                for (let i = 0; i < bulletCount; i++) {
+                    const offset = (i - (bulletCount - 1) / 2) * 8;
+                    playerBullets.push(new PlayerBullet(
+                        this.x + offset, 
+                        this.y - 10, 
+                        0, 
+                        -BULLET_SPEED - (powerLevel * 0.5) // Updated speed
+                    ));
+                }
+                
+                // Side shots at higher power levels
+                if (powerLevel >= 3) {
+                    playerBullets.push(new PlayerBullet(this.x - 15, this.y - 5, -0.5, -BULLET_SPEED * 0.9));
+                    playerBullets.push(new PlayerBullet(this.x + 15, this.y - 5, 0.5, -BULLET_SPEED * 0.9));
+                }
+                
+                // Special ability for Dratt (character 2)
+                if (this.characterType === 2) {
+                    playerBullets.push(new PlayerBullet(this.x, this.y - 20, 0, -BULLET_SPEED * 1.2, true));
+                }
+                
+                // Special ability for Spectral (character 3) - homing bullets
+                if (this.characterType === 3) {
+                    for (let i = 0; i < 2; i++) {
+                        const homingBullet = new PlayerBullet(
+                            this.x + (i * 10 - 5), 
+                            this.y - 10, 
+                            0, 
+                            -BULLET_SPEED
+                        );
+                        homingBullet.isHoming = true;
+                        playerBullets.push(homingBullet);
+                    }
+                }
+            }
+            
+            draw() {
+                const img = images[`player${this.characterType}`];
+                
+                if (img) {
+                    // Flash when invincible
+                    if (this.invincible > 0 && this.invincible % 6 < 3) {
+                        ctx.globalAlpha = 0.5;
+                    }
+                    
+                    ctx.drawImage(img, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                    ctx.globalAlpha = 1.0;
+                    
+                    // Draw shield if active
+                    if (playerHasShield && shieldHits > 0) {
+                        const pulse = 0.5 + Math.sin(frameCount * 0.1) * 0.5;
+                        ctx.strokeStyle = `rgba(102, 153, 255, ${pulse})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.width/2 + 10, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    
+                    // Draw spell charge indicator
+                    if (isChargingSpell && selectedSpellCard > 0) {
+                        const chargePercent = spellCharge / SPELL_CHARGE_TIME;
+                        ctx.fillStyle = `rgba(255, 102, 204, ${0.3 + chargePercent * 0.4})`;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, 20 + chargePercent * 10, 0, Math.PI * 2 * chargePercent);
+                        ctx.lineTo(this.x, this.y);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            checkCollision(bullet) {
+                if (this.invincible > 0) return false;
+                
+                const dx = this.x - bullet.x;
+                const dy = this.y - bullet.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < (PLAYER_HITBOX_RADIUS + bullet.hitRadius);
+            }
+        }
+        
+        // Use bomb (ultimate move)
+        function useBomb() {
+            if (bombs <= 0) return;
+            
+            bombs--;
+            updateUI();
+            playSound('bombSound');
+            
+            // Create bomb effect
+            if (images.bombEffect) {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI * 2) / 8;
+                    const distance = 40;
+                    const effect = {
+                        x: player.x + Math.cos(angle) * distance,
+                        y: player.y + Math.sin(angle) * distance,
+                        size: 120,
+                        life: 40,
+                        maxLife: 40
+                    };
+                    particles.push(effect);
+                }
+            }
+            
+            // Clear all enemy bullets with style
+            for (let i = 0; i < enemyBullets.length; i++) {
+                const bullet = enemyBullets[i];
+                particles.push({
+                    x: bullet.x,
+                    y: bullet.y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 20,
+                    maxLife: 20,
+                    color: '#ffff66',
+                    size: 4
+                });
+            }
+            enemyBullets = [];
+            
+            // Damage all enemies
+            enemies.forEach(enemy => {
+                enemy.health -= 8;
+                if (enemy.health <= 0) {
+                    score += enemy.type === 1 ? 100 : 300;
+                    createExplosion(enemy.x, enemy.y, enemy.type === 1 ? '#6699ff' : '#9966ff');
+                    spawnCoins(enemy.x, enemy.y, enemy.type === 1 ? 3 : 8);
+                    
+                    if (Math.random() < 0.3) {
+                        powerUps.push(new PowerUp(enemy.x, enemy.y));
+                    }
+                }
+            });
+            
+            // Remove dead enemies
+            enemies = enemies.filter(enemy => enemy.health > 0);
+            
+            updateUI();
+        }
+        
+        // Player bullet class - UPDATED SPEED
+        class PlayerBullet {
+            constructor(x, y, vx, vy, isLaser = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.isLaser = isLaser;
+                this.isHoming = false;
+                this.width = isLaser ? 6 : 8;
+                this.height = isLaser ? 28 : 18;
+                this.hitRadius = isLaser ? 3 : 4;
+                this.damage = isLaser ? 3 : 1;
+                this.homingTarget = null;
+            }
+            
+            update() {
+                // Homing behavior for Spectral character
+                if (this.isHoming && enemies.length > 0) {
+                    if (!this.homingTarget || this.homingTarget.health <= 0) {
+                        // Find closest enemy
+                        let closestDist = Infinity;
+                        for (const enemy of enemies) {
+                            const dx = enemy.x - this.x;
+                            const dy = enemy.y - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < closestDist) {
+                                closestDist = dist;
+                                this.homingTarget = enemy;
+                            }
+                        }
+                    }
+                    
+                    if (this.homingTarget && this.homingTarget.health > 0) {
+                        const dx = this.homingTarget.x - this.x;
+                        const dy = this.homingTarget.y - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 0) {
+                            // Gentle homing
+                            const homingStrength = 0.05;
+                            this.vx += (dx / dist) * homingStrength;
+                            this.vy += (dy / dist) * homingStrength;
+                            
+                            // Limit speed
+                            const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                            const maxSpeed = BULLET_SPEED * 1.5;
+                            if (speed > maxSpeed) {
+                                this.vx = (this.vx / speed) * maxSpeed;
+                                this.vy = (this.vy / speed) * maxSpeed;
+                            }
+                        }
+                    }
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                return this.y > -30 && this.y < CANVAS_HEIGHT + 30 && 
+                       this.x > -30 && this.x < CANVAS_WIDTH + 30;
+            }
+            
+            draw() {
+                const img = this.isLaser ? images.playerBullet2 : images.playerBullet;
+                
+                if (img) {
+                    ctx.drawImage(img, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                } else {
+                    ctx.fillStyle = this.isLaser ? '#ff66ff' : '#ffff66';
+                    ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                }
+            }
+        }
+        
+        // Enemy bullet class - UPDATED SPEED
+        class EnemyBullet {
+            constructor(x, y, vx, vy, type = 'normal') {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.type = type;
+                this.width = 10;
+                this.height = 10;
+                this.hitRadius = 5;
+                this.speed = Math.sqrt(vx*vx + vy*vy);
+                this.lifetime = 0;
+            }
+            
+            update() {
+                this.lifetime++;
+                
+                switch(this.type) {
+                    case 'curved':
+                        this.vx += Math.sin(this.lifetime * 0.05) * 0.02;
+                        break;
+                    case 'spiral':
+                        const angle = Math.atan2(this.vy, this.vx);
+                        const newAngle = angle + 0.03;
+                        this.vx = Math.cos(newAngle) * this.speed;
+                        this.vy = Math.sin(newAngle) * this.speed;
+                        break;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                return this.y > -40 && this.y < CANVAS_HEIGHT + 40 && 
+                       this.x > -40 && this.x < CANVAS_WIDTH + 40;
+            }
+            
+            draw() {
+                const img = images.enemyBullet;
+                
+                if (img) {
+                    ctx.globalAlpha = 0.85;
+                    ctx.drawImage(img, this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                    ctx.globalAlpha = 1.0;
+                } else {
+                    const colors = {
+                        'normal': 'rgba(255, 153, 102, 0.9)',
+                        'curved': 'rgba(102, 204, 255, 0.9)',
+                        'spiral': 'rgba(204, 102, 255, 0.9)'
+                    };
+                    ctx.fillStyle = colors[this.type] || colors.normal;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw hitbox
+                ctx.strokeStyle = 'rgba(255, 100, 100, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.hitRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Coin class
+        class Coin {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 16;
+                this.height = 16;
+                this.speed = 1.5;
+                this.collected = false;
+                this.floatOffset = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                this.y += this.speed;
+                this.x += Math.sin(frameCount * 0.05 + this.floatOffset) * 0.5;
+                
+                if (player && !this.collected) {
+                    const dx = this.x - player.x;
+                    const dy = this.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 25) {
+                        this.collected = true;
+                        coins += 10;
+                        totalCoins += 10;
+                        playSound('coinSound');
+                        updateUI();
+                        
+                        for (let i = 0; i < 8; i++) {
+                            particles.push({
+                                x: this.x,
+                                y: this.y,
+                                vx: (Math.random() - 0.5) * 4,
+                                vy: (Math.random() - 0.5) * 4,
+                                life: 25,
+                                maxLife: 25,
+                                color: '#ffcc66',
+                                size: 3
+                            });
+                        }
+                    }
+                }
+                
+                return this.y < CANVAS_HEIGHT + 30 && !this.collected;
+            }
+            
+            draw() {
+                const img = images.coin;
+                
+                if (img) {
+                    const float = 1 + Math.sin(frameCount * 0.1 + this.floatOffset) * 0.1;
+                    ctx.drawImage(img, 
+                        this.x - this.width/2 * float, 
+                        this.y - this.height/2 * float, 
+                        this.width * float, 
+                        this.height * float
+                    );
+                } else {
+                    ctx.fillStyle = '#ffcc66';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // PowerUp class
+        class PowerUp {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.speed = 1;
+                this.collected = false;
+                this.floatOffset = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                this.y += this.speed;
+                this.x += Math.sin(frameCount * 0.03 + this.floatOffset) * 0.8;
+                
+                if (player && !this.collected) {
+                    const dx = this.x - player.x;
+                    const dy = this.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 30) {
+                        this.collected = true;
+                        powerLevel = Math.min(powerLevel + 1, 6);
+                        playSound('powerupSound');
+                        
+                        for (let i = 0; i < 12; i++) {
+                            particles.push({
+                                x: this.x,
+                                y: this.y,
+                                vx: (Math.random() - 0.5) * 5,
+                                vy: (Math.random() - 0.5) * 5,
+                                life: 30,
+                                maxLife: 30,
+                                color: '#66ffcc',
+                                size: 5
+                            });
+                        }
+                    }
+                }
+                
+                return this.y < CANVAS_HEIGHT + 30 && !this.collected;
+            }
+            
+            draw() {
+                const img = images.powerup;
+                
+                if (img) {
+                    const pulse = 1 + Math.sin(frameCount * 0.08) * 0.3;
+                    ctx.drawImage(img, 
+                        this.x - this.width/2 * pulse, 
+                        this.y - this.height/2 * pulse, 
+                        this.width * pulse, 
+                        this.height * pulse
+                    );
+                } else {
+                    ctx.fillStyle = '#66ffcc';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // Create explosion particles
+        function createExplosion(x, y, color) {
+            playSound('explosionSound');
+            
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 35,
+                    maxLife: 35,
+                    color: color,
+                    size: 2 + Math.random() * 5
+                });
+            }
+        }
+        
+        // Spawn coins when enemy is destroyed
+        function spawnCoins(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const angle = (i * Math.PI * 2) / count;
+                const distance = 25;
+                coinsOnScreen.push(new Coin(
+                    x + Math.cos(angle) * distance,
+                    y + Math.sin(angle) * distance
+                ));
+            }
+        }
+        
+        // Spawn enemies
+        function spawnEnemies() {
+            const adjustedSpawnRate = Math.max(ENEMY_SPAWN_RATE / difficulty, 60);
+            
+            if (frameCount % Math.floor(adjustedSpawnRate) === 0) {
+                const x = 60 + Math.random() * (CANVAS_WIDTH - 120);
+                
+                if (frameCount < 90) return;
+                
+                const spawnChance = Math.min(0.8, 0.3 + (score / 4000));
+                
+                if (score >= ENEMY2_UNLOCK_SCORE && Math.random() < spawnChance * 0.4) {
+                    enemies.push(new Enemy(x, -50, 2));
+                } else if (Math.random() < spawnChance) {
+                    enemies.push(new Enemy(x, -50, 1));
+                }
+            }
+            
+            // Spawn boss at specific score
+            if (score >= BOSS_SPAWN_SCORE && enemies.length === 0 && !enemies.some(e => e.isBoss)) {
+                const boss = new Boss();
+                enemies.push(boss);
+                
+                // Play boss music
+                audio.backgroundMusic.pause();
+                audio.bossMusic.currentTime = 0;
+                playSound('bossMusic');
+                playSound('bossWarningSound');
+            }
+        }
+        
+        // Update all game objects
+        function updateGame() {
+            frameCount++;
+            backgroundY = (backgroundY + 0.5) % CANVAS_HEIGHT;
+            
+            if (player) {
+                player.update();
+            }
+            
+            // Update player bullets
+            for (let i = playerBullets.length - 1; i >= 0; i--) {
+                if (!playerBullets[i].update()) {
+                    playerBullets.splice(i, 1);
+                    continue;
+                }
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (enemies[j].checkCollision(playerBullets[i])) {
+                        playerBullets.splice(i, 1);
+                        
+                        if (enemies[j].health <= 0) {
+                            score += enemies[j].type === 1 ? 120 : 350;
+                            if (enemies[j].isBoss) score += 1500;
+                            
+                            createExplosion(enemies[j].x, enemies[j].y, enemies[j].type === 1 ? '#6699ff' : '#9966ff');
+                            spawnCoins(enemies[j].x, enemies[j].y, enemies[j].isBoss ? 25 : (enemies[j].type === 1 ? 4 : 10));
+                            
+                            // Check for drops
+                            checkBossDrops(enemies[j]);
+                            
+                            if (Math.random() < 0.25) {
+                                powerUps.push(new PowerUp(enemies[j].x, enemies[j].y));
+                            }
+                            
+                            enemies.splice(j, 1);
+                            
+                            // If boss was defeated, switch back to normal music
+                            if (enemies[j] && enemies[j].isBoss) {
+                                audio.bossMusic.pause();
+                                audio.backgroundMusic.currentTime = 0;
+                                playSound('backgroundMusic');
+                            }
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            
+            // NEW: Update spell bullets
+            for (let i = spellBullets.length - 1; i >= 0; i--) {
+                if (!spellBullets[i].update()) {
+                    spellBullets.splice(i, 1);
+                    continue;
+                }
+                
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    if (spellBullets[i].checkCollision(enemies[j])) {
+                        enemies[j].health -= spellBullets[i].damage;
+                        
+                        // Visual effect
+                        particles.push({
+                            x: spellBullets[i].x,
+                            y: spellBullets[i].y,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: (Math.random() - 0.5) * 4,
+                            life: 20,
+                            maxLife: 20,
+                            color: spellBullets[i].glowColor,
+                            size: 4
+                        });
+                        
+                        if (enemies[j].health <= 0) {
+                            score += enemies[j].type === 1 ? 120 : 350;
+                            if (enemies[j].isBoss) score += 1500;
+                            
+                            createExplosion(enemies[j].x, enemies[j].y, enemies[j].type === 1 ? '#6699ff' : '#9966ff');
+                            spawnCoins(enemies[j].x, enemies[j].y, enemies[j].isBoss ? 25 : (enemies[j].type === 1 ? 4 : 10));
+                            
+                            // Check for drops
+                            checkBossDrops(enemies[j]);
+                            
+                            if (Math.random() < 0.25) {
+                                powerUps.push(new PowerUp(enemies[j].x, enemies[j].y));
+                            }
+                            
+                            enemies.splice(j, 1);
+                        }
+                        
+                        // Destroy bullet if it should be destroyed
+                        if (spellBullets[i].type !== 2 || spellBullets[i].pierceCount > spellBullets[i].pierce) {
+                            spellBullets.splice(i, 1);
+                        }
+                        
+                        break;
+                    }
+                }
+            }
+            
+            // Update enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                if (!enemies[i].update()) {
+                    enemies.splice(i, 1);
+                }
+            }
+            
+            // Update enemy bullets
+            if (player) {
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    if (!enemyBullets[i].update()) {
+                        enemyBullets.splice(i, 1);
+                        continue;
+                    }
+                    
+                    if (player.checkCollision(enemyBullets[i])) {
+                        playSound('hitSound');
+                        enemyBullets.splice(i, 1);
+                        
+                        createExplosion(player.x, player.y, '#ff6666');
+                        
+                        if (playerHasShield && shieldHits > 0) {
+                            shieldHits--;
+                            if (shieldHits === 0) {
+                                playerHasShield = false;
+                            }
+                        } else {
+                            lives--;
+                            player.invincible = INVINCIBILITY_TIME;
+                            
+                            if (lives <= 0) {
+                                gameOver();
+                                return;
+                            }
+                        }
+                        
+                        updateUI();
+                    }
+                }
+            }
+            
+            // Update coins
+            for (let i = coinsOnScreen.length - 1; i >= 0; i--) {
+                if (!coinsOnScreen[i].update()) {
+                    coinsOnScreen.splice(i, 1);
+                }
+            }
+            
+            // Update powerups
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                if (!powerUps[i].update()) {
+                    powerUps.splice(i, 1);
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                if (particles[i].life) {
+                    particles[i].x += particles[i].vx || 0;
+                    particles[i].y += particles[i].vy || 0;
+                    particles[i].life--;
+                    
+                    if (particles[i].life <= 0) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            if (gameState === 'playing') {
+                spawnEnemies();
+            }
+        }
+        
+        // Draw the background
+        function drawBackground() {
+            if (images.background && typeof images.background !== 'string') {
+                try {
+                    ctx.drawImage(images.background, 0, backgroundY - CANVAS_HEIGHT, CANVAS_WIDTH, CANVAS_HEIGHT);
+                    ctx.drawImage(images.background, 0, backgroundY, CANVAS_WIDTH, CANVAS_HEIGHT);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                } catch (e) {
+                    drawDefaultBackground();
+                }
+            } else {
+                drawDefaultBackground();
+            }
+        }
+        
+        function drawDefaultBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+            gradient.addColorStop(0, '#0a0a2a');
+            gradient.addColorStop(0.5, '#1a1a4a');
+            gradient.addColorStop(1, '#0a0a2a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        }
+        
+        function drawGame() {
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            drawBackground();
+            
+            // Draw enemy bullets first (behind everything)
+            for (const bullet of enemyBullets) {
+                bullet.draw();
+            }
+            
+            // Draw enemies
+            for (const enemy of enemies) {
+                enemy.draw();
+            }
+            
+            // Draw player bullets
+            for (const bullet of playerBullets) {
+                bullet.draw();
+            }
+            
+            // NEW: Draw spell bullets
+            for (const bullet of spellBullets) {
+                bullet.draw();
+            }
+            
+            // Draw collectibles
+            for (const coin of coinsOnScreen) {
+                coin.draw();
+            }
+            
+            for (const powerup of powerUps) {
+                powerup.draw();
+            }
+            
+            // Draw player (on top)
+            if (player) {
+                player.draw();
+            }
+            
+            // Draw particles (on very top)
+            for (const particle of particles) {
+                if (particle.color) {
+                    const alpha = particle.life / particle.maxLife;
+                    ctx.fillStyle = particle.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size * alpha, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        function gameOver() {
+            const earnedCoins = Math.floor(score / 80);
+            coins += earnedCoins;
+            totalCoins += earnedCoins;
+            
+            // Check if player2 should be unlocked
+            if (score >= PLAYER2_UNLOCK_SCORE && !player2Unlocked) {
+                player2Unlocked = true;
+            }
+            
+            saveGameData();
+            
+            // Stop all music
+            audio.backgroundMusic.pause();
+            audio.bossMusic.pause();
+            
+            if (continues > 0) {
+                continues--;
+                showGameOverScreen();
+            } else {
+                showGameOverScreen();
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (gameState === 'playing') {
+                if (!isPaused) updateGame();
+                drawGame();
+                // If paused, the HTML overlay is shown by pauseGame(); drawGame keeps showing the canvas beneath
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize the game
+        function init() {
+            loadGameData();
+            loadAssets();
+            // Setup audio to start after user gesture (fixes autoplay blocking in browsers)
+            enableAudioOnInteraction();
+            
+            // Simple keyboard handling
+            window.addEventListener('keydown', (e) => {
+                // Pause toggle with Esc or P
+                if (e.key === 'Escape' || (typeof e.key === 'string' && e.key.toLowerCase() === 'p')) {
+                    e.preventDefault();
+                    togglePause();
+                    return;
+                }
+
+                // Only prevent default for spacebar to prevent scrolling
+                if (e.key === ' ') {
+                    e.preventDefault();
+                }
+
+                keys[e.key] = true;
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                // Avoid unsetting pause key toggles
+                if (e.key === 'Escape' || (typeof e.key === 'string' && e.key.toLowerCase() === 'p')) return;
+                keys[e.key] = false;
+            });
+
+            // Pause / overlay buttons
+            const pauseBtn = document.getElementById('pauseButton');
+            if (pauseBtn) pauseBtn.addEventListener('click', () => { togglePause(); });
+            const resumeBtn = document.getElementById('resumeButton');
+            if (resumeBtn) resumeBtn.addEventListener('click', () => { resumeGame(); });
+            const pauseRetryBtn = document.getElementById('pauseRetryButton');
+            if (pauseRetryBtn) pauseRetryBtn.addEventListener('click', () => { resumeGame(); startGame(false); });
+            const pauseQuitBtn = document.getElementById('pauseQuitButton');
+            if (pauseQuitBtn) pauseQuitBtn.addEventListener('click', () => { resumeGame(); score = 0; continues = INITIAL_CONTINUES; showTitleScreen(); });
+            
+            // Clear keys when window loses focus
+            window.addEventListener('blur', () => {
+                Object.keys(keys).forEach(key => {
+                    keys[key] = false;
+                });
+            });
+            
+            // Button event listeners
+            document.getElementById('startButton').addEventListener('click', () => startGame(false));
+            document.getElementById('continueButton').addEventListener('click', () => startGame(true));
+            document.getElementById('retryButton').addEventListener('click', () => startGame(false));
+            document.getElementById('giveUpButton').addEventListener('click', () => {
+                score = 0;
+                continues = INITIAL_CONTINUES;
+                showTitleScreen();
+            });
+            
+            document.getElementById('storeButton').addEventListener('click', showStoreScreen);
+            document.getElementById('difficultyButton').addEventListener('click', showDifficultyScreen);
+            document.getElementById('characterButton').addEventListener('click', showCharacterScreen);
+            document.getElementById('spellCardButton').addEventListener('click', showSpellCardScreen);
+            document.getElementById('backFromStore').addEventListener('click', showTitleScreen);
+            document.getElementById('backFromDifficulty').addEventListener('click', showTitleScreen);
+            document.getElementById('backFromCharacter').addEventListener('click', showTitleScreen);
+            document.getElementById('backFromSpellCard').addEventListener('click', showTitleScreen);
+            
+            document.getElementById('bombButton').addEventListener('click', () => {
+                if (bombs > 0) useBomb();
+            });
+            
+            // Store purchase listeners
+            document.getElementById('buyLife').addEventListener('click', () => {
+                if (coins >= storeItems.extraLife.price && storeItems.extraLife.owned < storeItems.extraLife.max) {
+                    coins -= storeItems.extraLife.price;
+                    storeItems.extraLife.owned++;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            document.getElementById('buyBomb').addEventListener('click', () => {
+                if (coins >= storeItems.extraBomb.price && storeItems.extraBomb.owned < storeItems.extraBomb.max) {
+                    coins -= storeItems.extraBomb.price;
+                    storeItems.extraBomb.owned++;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            document.getElementById('buyShield').addEventListener('click', () => {
+                if (coins >= storeItems.shield.price && storeItems.shield.owned < storeItems.shield.max) {
+                    coins -= storeItems.shield.price;
+                    storeItems.shield.owned++;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            document.getElementById('buyPower').addEventListener('click', () => {
+                if (coins >= storeItems.powerUp.price && storeItems.powerUp.owned < storeItems.powerUp.max) {
+                    coins -= storeItems.powerUp.price;
+                    storeItems.powerUp.owned++;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            // NEW: Spell card purchase listeners
+            document.getElementById('buySpellShadow').addEventListener('click', () => {
+                if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[1] && !storeItems.spellShadow.owned) {
+                    coins -= SPELL_CARD_PRICE;
+                    storeItems.spellShadow.owned = true;
+                    spellCardsUnlocked[1] = true;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            document.getElementById('buySpellPrism').addEventListener('click', () => {
+                if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[2] && !storeItems.spellPrism.owned) {
+                    coins -= SPELL_CARD_PRICE;
+                    storeItems.spellPrism.owned = true;
+                    spellCardsUnlocked[2] = true;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            document.getElementById('buySpellGhost').addEventListener('click', () => {
+                if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[3] && !storeItems.spellGhost.owned) {
+                    coins -= SPELL_CARD_PRICE;
+                    storeItems.spellGhost.owned = true;
+                    spellCardsUnlocked[3] = true;
+                    saveGameData();
+                    updateUI();
+                }
+            });
+            
+            // Difficulty selection
+            document.querySelectorAll('.difficulty-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    selectedDifficulty = parseInt(option.dataset.level);
+                    saveGameData();
+                    updateUI();
+                });
+            });
+            
+            // Character selection
+            document.querySelectorAll('.character-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const characterId = parseInt(option.dataset.character);
+                    
+                    // Check if character is locked
+                    if (characterId === 2 && !player2Unlocked) {
+                        return;
+                    }
+                    if (characterId === 3 && !player3Unlocked) {
+                        return;
+                    }
+                    
+                    selectedCharacter = characterId;
+                    saveGameData();
+                    updateCharacterSelection();
+                });
+            });
+            
+            // NEW: Spell card selection
+            document.querySelectorAll('.spell-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const spellId = parseInt(card.dataset.spell);
+                    
+                    // Check if spell is locked
+                    if (spellId > 0 && !spellCardsUnlocked[spellId]) {
+                        return;
+                    }
+                    
+                    selectedSpellCard = spellId;
+                    saveGameData();
+                    updateSpellCardSelection();
+                });
+            });
+            
+            // UI image error handling - updated for new placeholder system
+            const uiImages = document.querySelectorAll('.ui-img');
+            uiImages.forEach(imgElement => {
+                imgElement.onerror = function() {
+                    console.log(`Failed to load UI image: ${this.alt}`);
+                    this.classList.add('failed');
+                    // If there's a fallback span inside the parent button, show it
+                    const fallback = this.parentElement ? this.parentElement.querySelector('.btn-fallback') : null;
+                    if (fallback) fallback.classList.remove('hidden');
+
+                    // Title image uses a separate fallback element
+                    if (this.id === 'titleImage') {
+                        const titleFallback = document.getElementById('titleFallback');
+                        if (titleFallback) titleFallback.classList.remove('hidden');
+                    }
+
+                    // Backwards-compat: show any placeholder div if present
+                    const placeholder = document.getElementById(`${this.id}Placeholder`);
+                    if (placeholder) placeholder.classList.remove('hidden');
+                };
+            });
+            
+            gameLoop();
+            
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+        }
+        
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
             background-color: #000; /* Fallback color */
             display: flex;
             justify-content: center;
@@ -3773,3 +7877,4 @@
     </script>
 </body>
 </html>
+
