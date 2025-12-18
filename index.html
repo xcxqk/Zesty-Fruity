@@ -2091,6 +2091,20 @@
             audio.bossWarningSound.volume = 0.6;
             audio.spellChargeSound.volume = 0.4;
             audio.spellFireSound.volume = 0.6;
+
+            // Preload all audio assets to avoid first-play decode stalls
+            Object.keys(audio).forEach(name => {
+                try {
+                    const a = audio[name];
+                    if (a && a.src) {
+                        a.preload = 'auto';
+                        // attempt to load now; ignores if already loading
+                        a.load();
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            });
         }
         
         // Enable audio playback after a user gesture (click or keypress)
@@ -2158,29 +2172,52 @@
         function playSound(soundName) {
             try {
                 const sound = audio[soundName];
-                console.log('Attempting play for', soundName, sound && sound.src ? '(has src)' : '(no src)');
+                //console.log('Attempting play for', soundName, sound && sound.src ? '(has src)' : '(no src)');
                 if (sound && sound.src) {
                     // If this is a music track and it's not allowed in the current state, queue it for later
                     if (!isAudioAllowedNow(soundName) && (soundName === 'titleMusic' || soundName === 'backgroundMusic')) {
-                        console.log(`Queuing ${soundName} until relevant screen is active`);
+                        //console.log(`Queuing ${soundName} until relevant screen is active`);
                         pendingAudioToPlay.add(soundName);
                         document.addEventListener('click', tryPlayPendingAudioOnce, { once: true });
                         document.addEventListener('keydown', tryPlayPendingAudioOnce, { once: true });
                         return;
                     }
 
-                    sound.currentTime = 0;
-                    sound.play().then(()=>{
-                        // success
-                    }).catch(e => {
-                        console.log(`Audio play failed for ${soundName}:`, e);
-                        // Try again on next user gesture (click or keydown)
-                        pendingAudioToPlay.add(soundName);
-                        document.addEventListener('click', tryPlayPendingAudioOnce, { once: true });
-                        document.addEventListener('keydown', tryPlayPendingAudioOnce, { once: true });
-                    });
+                    // For short SFX, use a cloned Audio node to avoid interrupting or blocking an existing element
+                    if (soundName !== 'titleMusic' && soundName !== 'backgroundMusic' && soundName !== 'bossMusic') {
+                        try {
+                            const sfx = sound.cloneNode();
+                            sfx.currentTime = 0;
+                            sfx.play().catch(err => {
+                                // If playback fails (autoplay policy), queue it for later
+                                //console.log(`SFX play failed for ${soundName}:`, err);
+                                pendingAudioToPlay.add(soundName);
+                                document.addEventListener('click', tryPlayPendingAudioOnce, { once: true });
+                                document.addEventListener('keydown', tryPlayPendingAudioOnce, { once: true });
+                            });
+                        } catch (err) {
+                            // Fallback to playing the original element
+                            try {
+                                sound.currentTime = 0;
+                                sound.play().catch(e => {
+                                    pendingAudioToPlay.add(soundName);
+                                    document.addEventListener('click', tryPlayPendingAudioOnce, { once: true });
+                                    document.addEventListener('keydown', tryPlayPendingAudioOnce, { once: true });
+                                });
+                            } catch (e2) { /* ignore */ }
+                        }
+                    } else {
+                        // Music tracks use the persistent audio element
+                        sound.currentTime = 0;
+                        sound.play().then(()=>{}).catch(e => {
+                            //console.log(`Audio play failed for ${soundName}:`, e);
+                            pendingAudioToPlay.add(soundName);
+                            document.addEventListener('click', tryPlayPendingAudioOnce, { once: true });
+                            document.addEventListener('keydown', tryPlayPendingAudioOnce, { once: true });
+                        });
+                    }
                 } else {
-                    console.log('playSound: audio not found or missing src for', soundName);
+                    //console.log('playSound: audio not found or missing src for', soundName);
                 }
             } catch (e) {
                 console.log("Sound error:", e);
