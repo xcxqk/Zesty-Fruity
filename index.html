@@ -1315,29 +1315,31 @@
                 keys['ArrowUp'] = ny < -deadNormalized;
                 keys['ArrowDown'] = ny > deadNormalized;
             }
-            joystick.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                activeId = e.changedTouches[0].identifier;
-                updateJoystickTouch(e.changedTouches[0]);
-            }, {passive:false});
-            joystick.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                for (const t of e.changedTouches) {
-                    if (t.identifier === activeId) { updateJoystickTouch(t); break; }
-                }
-            }, {passive:false});
-            joystick.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                for (const t of e.changedTouches) {
-                    if (t.identifier === activeId) {
-                        activeId = null;
-                        keys['ArrowLeft'] = keys['ArrowRight'] = keys['ArrowUp'] = keys['ArrowDown'] = false;
-                        joystickAxis.x = 0; joystickAxis.y = 0;
-                        if (knob) { knob.style.transform = 'translate(0,0)'; knob.classList.remove('active'); }
-                        break;
+            if (joystick) {
+                joystick.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    activeId = e.changedTouches[0].identifier;
+                    updateJoystickTouch(e.changedTouches[0]);
+                }, {passive:false});
+                joystick.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    for (const t of e.changedTouches) {
+                        if (t.identifier === activeId) { updateJoystickTouch(t); break; }
                     }
-                }
-            }, {passive:false});
+                }, {passive:false});
+                joystick.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    for (const t of e.changedTouches) {
+                        if (t.identifier === activeId) {
+                            activeId = null;
+                            keys['ArrowLeft'] = keys['ArrowRight'] = keys['ArrowUp'] = keys['ArrowDown'] = false;
+                            joystickAxis.x = 0; joystickAxis.y = 0;
+                            if (knob) { knob.style.transform = 'translate(0,0)'; knob.classList.remove('active'); }
+                            break;
+                        }
+                    }
+                }, {passive:false});
+            }
 
             // Buttons
             function makeTouchButton(id, key, hold=false) {
@@ -1502,8 +1504,8 @@
         
         // Track loaded images
         let imagesLoaded = 0;
-        // Include spell bullet images in totalImages count (+3)
-        const totalImages = Object.keys(images).length + 3;
+        // Total images to load (derived from the images object)
+        const totalImages = Object.keys(images).length;
         // If player uploads a custom coin icon it will be stored here as a dataURL
         let coinIconDataURL = null;
         
@@ -4226,31 +4228,25 @@
                 });
             });
             
-            // Button event listeners
-            document.getElementById('startButton').addEventListener('click', () => startGame(false));
-            document.getElementById('continueButton').addEventListener('click', () => startGame(true));
-            document.getElementById('retryButton').addEventListener('click', () => startGame(false));
-            document.getElementById('giveUpButton').addEventListener('click', () => {
-                score = 0;
-                continues = INITIAL_CONTINUES;
-                showTitleScreen();
-            });
+            // Button event listeners (guarded)
+            const startBtnEl = document.getElementById('startButton'); if (startBtnEl) startBtnEl.addEventListener('click', () => startGame(false));
+            const continueBtnEl = document.getElementById('continueButton'); if (continueBtnEl) continueBtnEl.addEventListener('click', () => startGame(true));
+            const retryBtnEl = document.getElementById('retryButton'); if (retryBtnEl) retryBtnEl.addEventListener('click', () => startGame(false));
+            const giveUpBtnEl = document.getElementById('giveUpButton'); if (giveUpBtnEl) giveUpBtnEl.addEventListener('click', () => { score = 0; continues = INITIAL_CONTINUES; showTitleScreen(); });
             
-            document.getElementById('storeButton').addEventListener('click', showStoreScreen);
-            document.getElementById('difficultyButton').addEventListener('click', showDifficultyScreen);
-            document.getElementById('characterButton').addEventListener('click', showCharacterScreen);
-            document.getElementById('spellCardButton').addEventListener('click', showSpellCardScreen);
-            document.getElementById('backFromStore').addEventListener('click', showTitleScreen);
-            document.getElementById('backFromDifficulty').addEventListener('click', showTitleScreen);
-            document.getElementById('backFromCharacter').addEventListener('click', showTitleScreen);
-            document.getElementById('backFromSpellCard').addEventListener('click', showTitleScreen);
+            const storeBtnEl = document.getElementById('storeButton'); if (storeBtnEl) storeBtnEl.addEventListener('click', showStoreScreen);
+            const diffBtnEl = document.getElementById('difficultyButton'); if (diffBtnEl) diffBtnEl.addEventListener('click', showDifficultyScreen);
+            const charBtnEl = document.getElementById('characterButton'); if (charBtnEl) charBtnEl.addEventListener('click', showCharacterScreen);
+            const spellBtnEl = document.getElementById('spellCardButton'); if (spellBtnEl) spellBtnEl.addEventListener('click', showSpellCardScreen);
+            const backStoreEl = document.getElementById('backFromStore'); if (backStoreEl) backStoreEl.addEventListener('click', showTitleScreen);
+            const backDiffEl = document.getElementById('backFromDifficulty'); if (backDiffEl) backDiffEl.addEventListener('click', showTitleScreen);
+            const backCharEl = document.getElementById('backFromCharacter'); if (backCharEl) backCharEl.addEventListener('click', showTitleScreen);
+            const backSpellEl = document.getElementById('backFromSpellCard'); if (backSpellEl) backSpellEl.addEventListener('click', showTitleScreen);
             
-            document.getElementById('bombButton').addEventListener('click', () => {
-                if (bombs > 0) useBomb();
-            });
+            const bombBtn = document.getElementById('bombButton'); if (bombBtn) bombBtn.addEventListener('click', () => { if (bombs > 0) useBomb(); });
             
-            // Store purchase listeners
-            document.getElementById('buyLife').addEventListener('click', () => {
+            // Store purchase listeners (guarded)
+            const buyLifeEl = document.getElementById('buyLife'); if (buyLifeEl) buyLifeEl.addEventListener('click', () => {
                 if (coins >= storeItems.extraLife.price && storeItems.extraLife.owned < storeItems.extraLife.max) {
                     coins -= storeItems.extraLife.price;
                     storeItems.extraLife.owned++;
@@ -4259,7 +4255,7 @@
                 }
             });
             
-            document.getElementById('buyBomb').addEventListener('click', () => {
+            const buyBombEl = document.getElementById('buyBomb'); if (buyBombEl) buyBombEl.addEventListener('click', () => {
                 if (coins >= storeItems.extraBomb.price && storeItems.extraBomb.owned < storeItems.extraBomb.max) {
                     coins -= storeItems.extraBomb.price;
                     storeItems.extraBomb.owned++;
@@ -4268,7 +4264,7 @@
                 }
             });
             
-            document.getElementById('buyShield').addEventListener('click', () => {
+            const buyShieldEl = document.getElementById('buyShield'); if (buyShieldEl) buyShieldEl.addEventListener('click', () => {
                 if (coins >= storeItems.shield.price && storeItems.shield.owned < storeItems.shield.max) {
                     coins -= storeItems.shield.price;
                     storeItems.shield.owned++;
@@ -4277,7 +4273,7 @@
                 }
             });
             
-            document.getElementById('buyPower').addEventListener('click', () => {
+            const buyPowerEl = document.getElementById('buyPower'); if (buyPowerEl) buyPowerEl.addEventListener('click', () => {
                 if (coins >= storeItems.powerUp.price && storeItems.powerUp.owned < storeItems.powerUp.max) {
                     coins -= storeItems.powerUp.price;
                     storeItems.powerUp.owned++;
@@ -4316,8 +4312,8 @@
                 updateUI();
             });
             
-            // NEW: Spell card purchase listeners
-            document.getElementById('buySpellShadow').addEventListener('click', () => {
+            // NEW: Spell card purchase listeners (guarded)
+            const buySpellShadowEl = document.getElementById('buySpellShadow'); if (buySpellShadowEl) buySpellShadowEl.addEventListener('click', () => {
                 if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[1] && !storeItems.spellShadow.owned) {
                     coins -= SPELL_CARD_PRICE;
                     storeItems.spellShadow.owned = true;
@@ -4327,7 +4323,7 @@
                 }
             });
             
-            document.getElementById('buySpellPrism').addEventListener('click', () => {
+            const buySpellPrismEl = document.getElementById('buySpellPrism'); if (buySpellPrismEl) buySpellPrismEl.addEventListener('click', () => {
                 if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[2] && !storeItems.spellPrism.owned) {
                     coins -= SPELL_CARD_PRICE;
                     storeItems.spellPrism.owned = true;
@@ -4337,7 +4333,7 @@
                 }
             });
             
-            document.getElementById('buySpellGhost').addEventListener('click', () => {
+            const buySpellGhostEl = document.getElementById('buySpellGhost'); if (buySpellGhostEl) buySpellGhostEl.addEventListener('click', () => {
                 if (coins >= SPELL_CARD_PRICE && !spellCardsUnlocked[3] && !storeItems.spellGhost.owned) {
                     coins -= SPELL_CARD_PRICE;
                     storeItems.spellGhost.owned = true;
